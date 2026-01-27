@@ -10,7 +10,7 @@ Documentation for BHResist can be found at https://bhresist.readthedocs.io.
 
 ## Citation
 
-Mitchell, Matt, Adams, Sonja, Lee, Edwin, and Swindler, Alexander. BHResist [SWR-25-57]. Computer Software. https://github.com/NREL/BHResist. USDOE Office of Energy Efficiency and Renewable Energy (EERE), Renewable Power Office. Geothermal Technologies Office. 04 Apr. 2025. Web. doi:10.11578/dc.20250421.3.
+Mitchell, Matt, Adams, Sonja, Lee, Edwin, and Swindler, Alexander. BHResist [SWR-25-57]. Computer Software. https://github.com/NatLabRockies/BHResist. USDOE Office of Energy Efficiency and Renewable Energy (EERE), Renewable Power Office. Geothermal Technologies Office. 04 Apr. 2025. Web. doi:10.11578/dc.20250421.3.
 
 ## References
 

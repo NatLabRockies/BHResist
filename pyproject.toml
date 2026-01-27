@@ -9,7 +9,7 @@ description = "Functionality to compute the thermal resistance of borehole heat 
 readme = "README.md"
 license = "BSD-3-Clause"
 license-files = ["LICENSE"]
-authors = [{ name = "Matt Mitchell", email = "Matt.Mitchell@nrel.gov" }]
+authors = [{ name = "Matt Mitchell", email = "Matt.Mitchell@nlr.gov" }]
 requires-python = ">=3.10"
 dependencies = [
     "SecondaryCoolantProps>=1.4",
@@ -31,9 +31,9 @@ classifiers = [
 ]
 
 [project.urls]
-Repository = "https://github.com/NREL/BHResist"
+Repository = "https://github.com/NatLabRockies/BHResist"
 Documentation = "https://bhresist.readthedocs.io/"
-Releases = "https://github.com/NREL/BHResist/releases"
+Releases = "https://github.com/NatLabRockies/BHResist/releases"
 
 [dependency-groups]
 dev = [
