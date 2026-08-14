@@ -1,10 +1,10 @@
 [build-system]
-requires = ["uv_build>=0.9.22,<0.10.0"]
+requires = ["uv_build>=0.9.22,<0.13.0"]
 build-backend = "uv_build"
 
 [project]
 name = "BHResist"
-version = "0.3"
+version = "0.4.0"
 description = "Functionality to compute the thermal resistance of borehole heat exchangers"
 readme = "README.md"
 license = "BSD-3-Clause"
@@ -12,7 +12,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "Matt Mitchell", email = "Matt.Mitchell@nlr.gov" }]
 requires-python = ">=3.10"
 dependencies = [
-    "SecondaryCoolantProps>=1.4",
+    "SecondaryCoolantProps>=1.5",
 ]
 
 classifiers = [
@@ -47,7 +47,7 @@ docs = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=bhr"
+addopts = "--cov=bhr --cov-fail-under=100"
 
 [tool.uv]
 default-groups = ["dev", "docs"]

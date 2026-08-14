@@ -1,4 +1,4 @@
-from math import cosh, exp, sinh
+from math import exp, tanh
 
 from bhr.enums import BoundaryCondition
 
@@ -57,4 +57,4 @@ def smoothing_function(x, x_low_limit, x_high_limit, y_low_limit, y_high_limit) 
 
 
 def coth(x):
-    return cosh(x) / sinh(x)
+    return 1 / tanh(x)

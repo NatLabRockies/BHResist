@@ -1,4 +1,5 @@
 from unittest import TestCase
+from unittest.mock import patch
 
 from bhr.double_u_borehole import DoubleUTube
 
@@ -97,3 +98,20 @@ class TestDoubleUBorehole(TestCase):
         d.update({"pipe_inlet_arrangement": "UNSUPPORTED"})
         with self.assertRaises(AssertionError):
             DoubleUTube(**d)
+
+    def test_resistance_methods_require_calculated_pipe_resistance(self):
+        for method_name in ("calc_bh_resist_local", "calc_internal_resist"):
+            with self.subTest(method=method_name):
+                bh = DoubleUTube(**self.inputs)
+                with (
+                    patch.object(bh, "update_b1", return_value=0),
+                    self.assertRaisesRegex(ValueError, "Pipe resistance has not been calculated"),
+                ):
+                    getattr(bh, method_name)(self.m_dot_per_u, 20)
+
+    def test_internal_resistance_rejects_invalid_runtime_arrangement(self):
+        bh = DoubleUTube(**self.inputs)
+        bh.pipe_inlet_arrangement = None
+
+        with self.assertRaisesRegex(AssertionError, "Invalid pipe inlet arrangement"):
+            bh.calc_internal_resist(self.m_dot_per_u, 20)

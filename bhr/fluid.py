@@ -1,42 +1,51 @@
-import logging
+from scp import get_fluid
+from scp.base_fluid import BaseFluid
 
-from scp.ethyl_alcohol import EthylAlcohol
-from scp.ethylene_glycol import EthyleneGlycol
-from scp.methyl_alcohol import MethylAlcohol
-from scp.propylene_glycol import PropyleneGlycol
-from scp.water import Water
+# Deprecated: legacy fluid keys will be removed in the v1.0.0 release.
+_LEGACY_FLUID_KEYS = {
+    "ETHYLALCOHOL": "ethyl_alcohol",
+    "ETHYLENEGLYCOL": "ethylene_glycol",
+    "METHYLALCOHOL": "methyl_alcohol",
+    "PROPYLENEGLYCOL": "propylene_glycol",
+    "WATER": "water",
+}
 
 
-def get_fluid(fluid_type: str, fluid_concentration: float = 0):
-    if fluid_concentration < 0:
-        logging.warning("Attempting to set <0 water-antifreeze mixture concentration.")
-        logging.warning("Expect fluid concentration 0 <= x <= 0.6")
-        logging.warning("Defaulting to 0.")
-        fluid_concentration = 0
+def resolve_fluid(
+    fluid_type: str | None = None,
+    fluid_concentration: float = 0.0,
+    *,
+    fluid: BaseFluid | None = None,
+) -> BaseFluid:
+    """
+    Return a SecondaryCoolantProps fluid for use by BHResist.
 
-    fluid_name = fluid_type.upper()
-    if fluid_name == "WATER":
-        if fluid_concentration == 0:
-            return Water()
-        else:
-            logging.warning(
-                f'Fluid "{fluid_name}" - attempting to set non-zero \
-                            water-antifreeze mixture concentration "{fluid_concentration:0.3f}".'
-            )
-            logging.warning("Defaulting to pure water.")
-            return Water()
+    Pass either a built-in fluid key and concentration or an existing
+    SecondaryCoolantProps BaseFluid instance. Existing instances support
+    user-defined fluids created by scp.get_fluid.
 
-    if fluid_concentration == 0:
-        logging.warning(f'Setting fluid "{fluid_name} with fluid-antifreeze mixture concentration = 0')
+    The compact, uppercase keys accepted by earlier BHResist releases remain
+    supported and are translated to the canonical SecondaryCoolantProps keys.
 
-    if fluid_name == "ETHYLALCOHOL":
-        return EthylAlcohol(fluid_concentration)
-    elif fluid_name == "ETHYLENEGLYCOL":
-        return EthyleneGlycol(fluid_concentration)
-    elif fluid_name == "METHYLALCOHOL":
-        return MethylAlcohol(fluid_concentration)
-    elif fluid_name == "PROPYLENEGLYCOL":
-        return PropyleneGlycol(fluid_concentration)
-    else:
-        logging.error(f'Unsupported fluid "{fluid_name}"')
-        assert False
+    :param fluid_type: built-in fluid key accepted by scp.get_fluid
+    :param fluid_concentration: mixture concentration fraction for a built-in fluid
+    :param fluid: existing SecondaryCoolantProps fluid instance
+    :return: resolved fluid instance
+    """
+    if fluid is not None:
+        if fluid_type is not None:
+            raise ValueError("Specify either fluid_type or fluid, not both.")
+        if fluid_concentration != 0.0:
+            raise ValueError("fluid_concentration cannot be used with an existing fluid instance.")
+        if not isinstance(fluid, BaseFluid):
+            raise TypeError("fluid must be an instance of scp.base_fluid.BaseFluid.")
+        return fluid
+
+    if fluid_type is None:
+        raise ValueError("Specify either fluid_type or fluid.")
+
+    fluid_key = _LEGACY_FLUID_KEYS.get(fluid_type.upper(), fluid_type)
+    return get_fluid(fluid_key, concentration=fluid_concentration)
+
+
+__all__ = ["BaseFluid", "get_fluid", "resolve_fluid"]

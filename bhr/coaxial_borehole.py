@@ -1,11 +1,15 @@
 from math import log, pi
 
-from bhr.fluid import get_fluid
+from scp.base_fluid import BaseFluid
+
+from bhr.fluid import resolve_fluid
 from bhr.pipe import Pipe
 from bhr.utilities import coth, smoothing_function
 
 
 class Coaxial:
+    """One-dimensional resistance-network model for a grouted coaxial borehole."""
+
     def __init__(
         self,
         borehole_diameter: float,
@@ -18,30 +22,35 @@ class Coaxial:
         length: float,
         grout_conductivity: float,
         soil_conductivity: float,
-        fluid_type: str,
-        fluid_concentration: float,
+        fluid_type: str | None = None,
+        fluid_concentration: float = 0,
+        *,
+        fluid: BaseFluid | None = None,
     ):
         """
-        Implementation for computing borehole thermal resistance for a grouted coaxial borehole.
+        Constructs a grouted concentric coaxial borehole model.
 
-        :param borehole_diameter: borehole diameter, in m.
-        :param outer_pipe_outer_diameter: outer diameter of outer pipe, in m.
-        :param outer_pipe_dimension_ratio: non-dimensional ratio of outer pipe diameter to thickness.
-        :param outer_pipe_conductivity: outer pipe thermal conductivity, in W/m-K.
-        :param inner_pipe_outer_diameter: inner diameter of outer pipe, in m.
-        :param inner_pipe_dimension_ratio: non-dimensional ratio of inner pipe diameter to thickness.
-        :param inner_pipe_conductivity: inner pipe thermal conductivity, in W/m-K.
-        :param length: length of borehole from top to bottom, in m.
-        :param grout_conductivity: grout thermal conductivity, in W/m-K.
-        :param soil_conductivity: pipe thermal conductivity, in W/m-K.
-        :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL",  "PROPYLENEGLYCOL", or "WATER"
-        :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
+        :param borehole_diameter: borehole diameter, m
+        :param outer_pipe_outer_diameter: outer diameter of the outer pipe, m
+        :param outer_pipe_dimension_ratio: ratio of outer-pipe outer diameter to wall thickness
+        :param outer_pipe_conductivity: outer-pipe thermal conductivity, W/(m-K)
+        :param inner_pipe_outer_diameter: outer diameter of the inner pipe, m
+        :param inner_pipe_dimension_ratio: ratio of inner-pipe outer diameter to wall thickness
+        :param inner_pipe_conductivity: inner-pipe thermal conductivity, W/(m-K)
+        :param length: active borehole length, m
+        :param grout_conductivity: grout thermal conductivity, W/(m-K)
+        :param soil_conductivity: ground thermal conductivity, W/(m-K)
+        :param fluid_type: built-in fluid key accepted by scp.get_fluid;
+                           omit when passing fluid
+        :param fluid_concentration: antifreeze fraction from 0 to 0.6; ignored for water
+        :param fluid: existing SecondaryCoolantProps fluid instance, including a
+                      user-defined fluid created by scp.get_fluid
         """
 
         self.borehole_diameter = borehole_diameter
         self.grout_conductivity = grout_conductivity
         self.soil_conductivity = soil_conductivity
-        self.fluid = get_fluid(fluid_type, fluid_concentration)
+        self.fluid = resolve_fluid(fluid_type, fluid_concentration, fluid=fluid)
         self.length = length
 
         self.outer_pipe = Pipe(
@@ -49,20 +58,28 @@ class Coaxial:
             outer_pipe_dimension_ratio,
             length,
             outer_pipe_conductivity,
-            fluid_type,
-            fluid_concentration,
+            fluid=self.fluid,
         )
         self.inner_pipe = Pipe(
             inner_pipe_outer_diameter,
             inner_pipe_dimension_ratio,
             length,
             inner_pipe_conductivity,
-            fluid_type,
-            fluid_concentration,
+            fluid=self.fluid,
         )
 
         self.annular_hydraulic_diameter = self.outer_pipe.pipe_inner_diameter - self.inner_pipe.pipe_outer_diameter
         self.annular_wetted_perimeter = pi * (self.outer_pipe.pipe_inner_diameter + self.inner_pipe.pipe_outer_diameter)
+
+    def set_fluid(self, fluid: BaseFluid) -> None:
+        """
+        Adopt an existing SecondaryCoolantProps fluid throughout the coaxial model.
+
+        :param fluid: SecondaryCoolantProps fluid instance
+        """
+        self.fluid = resolve_fluid(fluid=fluid)
+        self.inner_pipe.set_fluid(self.fluid)
+        self.outer_pipe.set_fluid(self.fluid)
 
     def re_annulus(self, m_dot, temp):
         """
@@ -162,16 +179,18 @@ class Coaxial:
 
     def calc_local_bh_resistance(self, m_dot, temp):
         """
+        Calculates the local resistance branches for a concentric coaxial borehole.
+
         Grundmann, Rachel Marie. "Improved design methods for ground heat exchangers."
         Master's thesis, Oklahoma State University, 2016.
 
-        Eqns 4.4 and 4.5
+        Equation 4.4 defines the fluid-to-fluid short-circuit resistance ``R_12 = R_a``.
+        Equation 4.5 defines the annular-fluid-to-borehole-wall resistance ``R_b``.
 
         :param m_dot: mass flow rate, kg/s
         :param temp: temperature, C
-        :return: local_bh_resist: total local borehole resistance K /(W/m)
-        :return: r_internal_resist: local internal borehole resistance K /(W/m)
-        :return: r_borehole_resist: local borehole resistance K /(W/m)
+        :return: resistance list ``[R_a + R_b, R_a, R_b]``, with each value
+                 in K/(W/m)
 
         """
         # resistances progressing from inside to outside
@@ -183,11 +202,14 @@ class Coaxial:
             2 * pi * self.grout_conductivity
         )
 
+        # Grundmann (2016), Eq. 4.4: R_12 = R_a = R_c,dti + R_p,dt + R_c,ai.
         r_internal_resist = sum([r_conv_inner_pipe, r_cond_inner_pipe, r_conv_outside_inner_pipe])
-        r_borehole_resist = sum([r_conv_inside_outer_pipe, r_cond_outer_pipe, r_cond_grout])
-        local_bh_resist = r_internal_resist + r_borehole_resist
 
-        return [local_bh_resist, r_internal_resist, r_borehole_resist]
+        # Grundmann (2016), Eq. 4.5: R_b = R_c,ao + R_p,a + R_g.
+        r_borehole_resist = sum([r_conv_inside_outer_pipe, r_cond_outer_pipe, r_cond_grout])
+        total_series_resist = r_internal_resist + r_borehole_resist
+
+        return [total_series_resist, r_internal_resist, r_borehole_resist]
 
     def calc_effective_bh_resistance_uhf(self, m_dot, temp):
         """
@@ -203,8 +225,9 @@ class Coaxial:
         """
 
         _, r_a, r_b = self.calc_local_bh_resistance(m_dot, temp)
-        rv = self.length / (m_dot * self.fluid.cp(temp))  # (K/(w/m)) thermal resistance factor
-        effective_bhr_uhf = r_b + 1 / (3 * r_a) * rv**2
+        r_v = self.length / (m_dot * self.fluid.cp(temp))  # K/(W/m)
+        # Grundmann (2016), Eq. 4.33: R_b* = R_b + R_v^2 / (3 R_a).
+        effective_bhr_uhf = r_b + 1 / (3 * r_a) * r_v**2
 
         return effective_bhr_uhf
 
@@ -222,9 +245,12 @@ class Coaxial:
         """
 
         _, r_a, r_b = self.calc_local_bh_resistance(m_dot, temp)
-        rv = self.length / (m_dot * self.fluid.cp(temp))  # (K/(w/m)) thermal resistance factor
-        n = rv / (2 * r_b) * (1 + 4 * r_b / r_a) ** (1 / 2)
-        effective_bhr_ubwt = r_b * n * coth(n)
+        r_v = self.length / (m_dot * self.fluid.cp(temp))  # K/(W/m)
+        # Grundmann (2016), Eq. 4.29: eta accounts for axial fluid-temperature variation.
+        eta = r_v / (2 * r_b) * (1 + 4 * r_b / r_a) ** (1 / 2)
+
+        # Grundmann (2016), Eq. 4.28: R_b* = R_b eta coth(eta).
+        effective_bhr_ubwt = r_b * eta * coth(eta)
 
         return effective_bhr_ubwt
 
@@ -246,14 +272,20 @@ class Coaxial:
 
     def calc_fluid_pipe_resist(self, m_dot, temp):
         """
-        Calculates the combined convection resistance of the annular space
+        Calculates the convection resistance at the inner surface of the outer pipe
         and the conduction resistance of the outer pipe.
+
+        This is ``R_c,ao + R_p,a``, the fluid-to-outer-pipe-wall portion of
+        Grundmann (2016), Equation 4.5. It excludes grout resistance and the
+        inner-annulus convection resistance assigned to ``R_a`` by Equation 4.4.
+
         :param m_dot: mass flow rate, kg/s
         :param temp: temperature, C
-        :return: annular convection resistance and outer pipe conduction resistance, K/(W/m)
+        :return: outer annular convection resistance and outer pipe conduction resistance, K/(W/m)
         """
 
         _, r_cond_outer_pipe = self.calc_cond_resist()
-        r_conv_outside_inner_pipe = self.calc_conv_resist_annulus(m_dot, temp)[0]
         r_conv_inside_outer_pipe = self.calc_conv_resist_annulus(m_dot, temp)[1]
-        return r_cond_outer_pipe + r_conv_outside_inner_pipe + r_conv_inside_outer_pipe
+
+        # Grundmann (2016), Eq. 4.5, excluding the grout term R_g.
+        return r_cond_outer_pipe + r_conv_inside_outer_pipe

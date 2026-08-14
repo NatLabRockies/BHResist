@@ -1,9 +1,118 @@
 import unittest
 
+from scp import get_fluid
+
 from bhr.borehole import Borehole
 
 
 class TestBorehole(unittest.TestCase):
+    @staticmethod
+    def _minimal_dict_inputs():
+        return {
+            "fluid_type": "WATER",
+            "boundary_condition": "uniform_heat_flux",
+            "borehole_type": "single_u_tube",
+            "borehole_diameter": 0.14,
+            "length": 100,
+            "grout_conductivity": 1.2,
+            "soil_conductivity": 2.5,
+        }
+
+    def test_adopts_user_defined_fluid(self):
+        custom_fluid = get_fluid(
+            "user_defined",
+            name="BoreholeFluid",
+            viscosity=0.002,
+            specific_heat=3200.0,
+            density=1050.0,
+            conductivity=0.42,
+        )
+        bh = Borehole()
+        bh.init_single_u_borehole(
+            borehole_diameter=0.14,
+            pipe_outer_diameter=0.042,
+            pipe_dimension_ratio=11,
+            length=100,
+            shank_space=0.01,
+            pipe_conductivity=0.4,
+            grout_conductivity=1.2,
+            soil_conductivity=2.5,
+            fluid=custom_fluid,
+        )
+
+        self.assertIsNotNone(bh._bh)
+        self.assertIs(bh._bh.fluid, custom_fluid)
+        self.assertGreater(bh.calc_bh_resist(temperature=20, mass_flow_rate=0.5), 0)
+
+        replacement = get_fluid("water")
+        bh.set_fluid(replacement)
+        self.assertIs(bh._bh.fluid, replacement)
+
+    def test_set_fluid_requires_initialized_borehole(self):
+        with self.assertRaisesRegex(RuntimeError, "Initialize the borehole"):
+            Borehole().set_fluid(get_fluid("water"))
+
+    def test_init_from_dict_rejects_invalid_enums(self):
+        inputs = self._minimal_dict_inputs()
+        inputs["borehole_type"] = "unsupported"
+        with self.assertRaisesRegex(LookupError, 'borehole_type "UNSUPPORTED" not supported'):
+            Borehole().init_from_dict(inputs)
+
+        inputs = self._minimal_dict_inputs()
+        inputs["boundary_condition"] = "unsupported"
+        with self.assertRaisesRegex(LookupError, 'boundary_condition "UNSUPPORTED" not supported'):
+            Borehole().init_from_dict(inputs)
+
+    def test_init_from_dict_rejects_unimplemented_internal_type(self):
+        bh = Borehole()
+
+        class UnsupportedType:
+            name = "UNSUPPORTED"
+
+        class MutatingInputs(dict):
+            def __getitem__(self, key):
+                if key == "borehole_diameter":
+                    bh._bh_type = UnsupportedType()
+                return super().__getitem__(key)
+
+        inputs = MutatingInputs(self._minimal_dict_inputs())
+        with self.assertRaisesRegex(NotImplementedError, 'bh_type "UNSUPPORTED" not implemented'):
+            bh.init_from_dict(inputs)
+
+    def test_calculation_methods_require_initialized_borehole(self):
+        bh = Borehole()
+
+        with self.assertRaisesRegex(TypeError, "Borehole not initialized"):
+            bh.calc_bh_resist(mass_flow_rate=0.5, temperature=20)
+        with self.assertRaisesRegex(NotImplementedError, "None not implemented"):
+            bh.calc_pipe_cond_resist()
+        with self.assertRaisesRegex(NotImplementedError, "None not implemented"):
+            bh.calc_fluid_resist(mass_flow_rate=0.5, temperature=20)
+        with self.assertRaisesRegex(TypeError, "Borehole not initialized"):
+            bh.calc_fluid_pipe_resist(mass_flow_rate=0.5, temperature=20)
+
+    def test_calculation_methods_reject_invalid_runtime_state(self):
+        bh = Borehole()
+        bh.init_single_u_borehole(
+            borehole_diameter=0.14,
+            pipe_outer_diameter=0.042,
+            pipe_dimension_ratio=11,
+            length=100,
+            shank_space=0.01,
+            pipe_conductivity=0.4,
+            grout_conductivity=1.2,
+            soil_conductivity=2.5,
+            fluid_type="WATER",
+        )
+
+        bh._boundary_condition = None
+        with self.assertRaisesRegex(NotImplementedError, "Boundary Condition"):
+            bh.calc_bh_resist(mass_flow_rate=0.5, temperature=20)
+
+        bh._bh_type = None
+        with self.assertRaisesRegex(NotImplementedError, "None not implemented"):
+            bh.calc_fluid_pipe_resist(mass_flow_rate=0.5, temperature=20)
+
     def test_init_single_u_uhf(self):
         bh = Borehole()
         bh.init_single_u_borehole(
@@ -105,8 +214,8 @@ class TestBorehole(unittest.TestCase):
         # only pass flow rate, so pipe resistance should be computed in the process of this call
         self.assertAlmostEqual(bh.calc_bh_resist(temperature=20, mass_flow_rate=0.4154), 0.1090, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.045761, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.003270, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.049032, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.006077, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.051838, delta=1e-4)
 
     def test_init_double_u_ubwt(self):
         bh = Borehole()
@@ -128,8 +237,31 @@ class TestBorehole(unittest.TestCase):
         # only pass flow rate, so pipe resistance should be computed in the process of this call
         self.assertAlmostEqual(bh.calc_bh_resist(temperature=20, mass_flow_rate=0.4154), 0.1065, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.045761, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.003270, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.049032, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.006077, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.051838, delta=1e-4)
+
+    def test_double_u_component_resistances_use_per_circuit_flow(self):
+        bh = Borehole()
+        bh.init_double_u_borehole(
+            borehole_diameter=0.115,
+            pipe_outer_diameter=0.032,
+            pipe_dimension_ratio=18.9,
+            length=200,
+            shank_space=0.02263,
+            pipe_conductivity=0.389,
+            pipe_inlet_arrangement="ADJACENT",
+            grout_conductivity=1.5,
+            soil_conductivity=3,
+            fluid_type="WATER",
+        )
+
+        total_mass_flow_rate = 0.5
+        per_circuit_mass_flow_rate = total_mass_flow_rate / 2
+        expected_fluid_resistance = bh._bh.calc_conv_resist(per_circuit_mass_flow_rate, 20)
+        expected_fluid_pipe_resistance = bh._bh.calc_fluid_pipe_resist(per_circuit_mass_flow_rate, 20)
+
+        self.assertAlmostEqual(bh.calc_fluid_resist(total_mass_flow_rate, 20), expected_fluid_resistance)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(total_mass_flow_rate, 20), expected_fluid_pipe_resistance)
 
     def test_init_double_u_from_dict(self):
         inputs = {
@@ -156,8 +288,8 @@ class TestBorehole(unittest.TestCase):
         # only pass flow rate, so pipe resistance should be computed in the process of this call
         self.assertAlmostEqual(bh.calc_bh_resist(temperature=20, mass_flow_rate=0.4154), 0.1090, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.045761, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.003270, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.049032, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.006077, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.051838, delta=1e-4)
 
     def test_init_coaxial_uhf(self):
         bh = Borehole()
@@ -180,7 +312,7 @@ class TestBorehole(unittest.TestCase):
         self.assertAlmostEqual(bh.calc_bh_resist(mass_flow_rate=0.5, temperature=20), 0.18128, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.082102, delta=1e-4)
         self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.008727, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.090829, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.085416, delta=1e-4)
 
     def test_init_coaxial_ubwt(self):
         bh = Borehole()
@@ -204,7 +336,7 @@ class TestBorehole(unittest.TestCase):
         self.assertAlmostEqual(bh.calc_bh_resist(mass_flow_rate=0.5, temperature=20), 0.18454, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.082102, delta=1e-4)
         self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.00872, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.09082, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.085416, delta=1e-4)
 
     def test_init_coaxial_from_dict(self):
         inputs = {
@@ -233,4 +365,4 @@ class TestBorehole(unittest.TestCase):
         self.assertAlmostEqual(bh.calc_bh_resist(mass_flow_rate=0.5, temperature=20), 0.18128, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.082102, delta=1e-4)
         self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.00872, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.09082, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.085416, delta=1e-4)

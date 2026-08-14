@@ -1,6 +1,8 @@
 import unittest
 from math import log
 
+from scp import get_fluid
+
 from bhr.pipe import Pipe
 
 
@@ -39,10 +41,65 @@ class TestPipe(unittest.TestCase):
         self.assertAlmostEqual(p.fluid_vol, 0.0586, delta=tol)
         self.assertAlmostEqual(p.pipe_wall_vol, 0.0289, delta=tol)
 
+    def test_adopts_user_defined_fluid(self):
+        custom_fluid = get_fluid(
+            "user_defined",
+            viscosity=0.002,
+            specific_heat=3200.0,
+            density=1050.0,
+            conductivity=0.42,
+        )
+        inputs = self.inputs.copy()
+        inputs.pop("fluid_type")
+        pipe = Pipe(**inputs, fluid=custom_fluid)
+
+        self.assertIs(pipe.fluid, custom_fluid)
+
+        replacement = get_fluid("water")
+        pipe.set_fluid(replacement)
+        self.assertIs(pipe.fluid, replacement)
+
     def test_mdot_to_re(self):
         p = Pipe(**self.inputs)
         tol = 0.1
         self.assertAlmostEqual(p.mdot_to_re(0.1, 20), 4649.9, delta=tol)
+
+    def test_mass_to_volume_flow(self):
+        pipe = Pipe(**self.inputs)
+        mass_flow_rate = 0.1
+        temperature = 20
+
+        self.assertAlmostEqual(
+            pipe.mdot_to_vdot(mass_flow_rate, temperature),
+            mass_flow_rate / pipe.fluid.density(temperature),
+        )
+
+    def test_pipe_diameter_helpers(self):
+        pipe = Pipe(**self.inputs)
+        dimension_ratio = 11
+        nominal_to_outer_diameter = {
+            0.75: 1.05,
+            1.0: 1.315,
+            1.25: 1.66,
+            1.5: 1.9,
+            2.0: 2.375,
+            3.0: 3.5,
+            4.0: 4.5,
+            6.0: 6.625,
+            8.0: 8.625,
+        }
+
+        for nominal_size, outer_diameter_inches in nominal_to_outer_diameter.items():
+            with self.subTest(nominal_size=nominal_size):
+                inner_diameter, outer_diameter = pipe.get_pipe_diameters_imperial(nominal_size, dimension_ratio)
+                self.assertAlmostEqual(outer_diameter, outer_diameter_inches * 0.0254)
+                self.assertAlmostEqual(
+                    inner_diameter,
+                    Pipe.get_inner_dia(outer_diameter_inches, dimension_ratio) * 0.0254,
+                )
+
+        with self.assertRaisesRegex(ValueError, "Unsupported pipe size"):
+            pipe.get_pipe_diameters_imperial(10, dimension_ratio)
 
     def test_calc_friction_factor(self):
         p = Pipe(**self.inputs)
@@ -111,3 +168,16 @@ class TestPipe(unittest.TestCase):
         pipe = Pipe(**self.inputs)
         tol = 1
         self.assertAlmostEqual(pipe.pressure_loss(0.5, 20), 33533, delta=tol)
+        self.assertEqual(pipe.pressure_loss(0, 20), 0)
+        self.assertEqual(pipe.pressure_loss(-0.5, 20), 0)
+
+    def test_pressure_loss_from_volume_flow(self):
+        pipe = Pipe(**self.inputs)
+        temperature = 20
+        volume_flow_rate = 0.0005
+        mass_flow_rate = pipe.fluid.density(temperature) * volume_flow_rate
+
+        self.assertAlmostEqual(
+            pipe.pressure_loss_v_dot(volume_flow_rate, temperature),
+            pipe.pressure_loss(mass_flow_rate, temperature),
+        )

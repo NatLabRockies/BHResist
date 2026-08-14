@@ -1,5 +1,7 @@
 from typing import cast
 
+from scp.base_fluid import BaseFluid
+
 from bhr.coaxial_borehole import Coaxial
 from bhr.double_u_borehole import DoubleUTube
 from bhr.enums import BoreholeType, BoundaryCondition
@@ -26,24 +28,30 @@ class Borehole:
         pipe_conductivity: float,
         grout_conductivity: float,
         soil_conductivity: float,
-        fluid_type: str,
+        fluid_type: str | None = None,
         fluid_concentration: float = 0,
         boundary_condition: str = "UNIFORM_HEAT_FLUX",
+        *,
+        fluid: BaseFluid | None = None,
     ) -> None:
         """
-        Constructs a grouted single u-tube borehole.
+        Constructs a grouted single U-tube borehole.
 
         :param borehole_diameter: borehole diameter, in m.
         :param pipe_outer_diameter: outer diameter of the pipe, in m.
-        :param pipe_dimension_ratio: non-dimensional ratio of pipe diameter to pipe thickness.
-        :param length: length of borehole from top to bottom, in m.
-        :param shank_space: radial distance from the borehole center to the pipe center, in m.
-        :param pipe_conductivity: pipe thermal conductivity, in W/m-K.
-        :param grout_conductivity: grout thermal conductivity, in W/m-K.
-        :param soil_conductivity: soil thermal conductivity, in W/m-K.
-        :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL", "PROPYLENEGLYCOL", or "WATER"
-        :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
+        :param pipe_dimension_ratio: ratio of pipe outer diameter to wall thickness.
+        :param length: active borehole length, in m.
+        :param shank_space: radial distance from the borehole center to a pipe center, in m;
+                            half the center-to-center distance between the two legs.
+        :param pipe_conductivity: pipe thermal conductivity, in W/(m-K).
+        :param grout_conductivity: grout thermal conductivity, in W/(m-K).
+        :param soil_conductivity: ground thermal conductivity, in W/(m-K).
+        :param fluid_type: built-in fluid key accepted by scp.get_fluid;
+                           omit when passing fluid.
+        :param fluid_concentration: mixture concentration fraction for a built-in fluid, from 0 to 0.6.
         :param boundary_condition: borehole wall boundary condition. "UNIFORM_HEAT_FLUX" or "UNIFORM_BOREHOLE_WALL_TEMP"
+        :param fluid: existing SecondaryCoolantProps fluid instance, including a
+                      user-defined fluid created by scp.get_fluid.
         """
 
         self._bh_type = BoreholeType.SINGLE_U_TUBE
@@ -59,6 +67,7 @@ class Borehole:
             soil_conductivity,
             fluid_type,
             fluid_concentration,
+            fluid=fluid,
         )
 
     def init_double_u_borehole(
@@ -72,25 +81,30 @@ class Borehole:
         pipe_inlet_arrangement: str,
         grout_conductivity: float,
         soil_conductivity: float,
-        fluid_type: str,
+        fluid_type: str | None = None,
         fluid_concentration: float = 0,
         boundary_condition: str = "UNIFORM_HEAT_FLUX",
+        *,
+        fluid: BaseFluid | None = None,
     ) -> None:
         """
-        Constructs a grouted double u-tube borehole with u-tubes in parallel.
+        Constructs a grouted double U-tube borehole with U-tubes in parallel.
 
         :param borehole_diameter: borehole diameter, in m.
         :param pipe_outer_diameter: outer diameter of the pipe, in m.
-        :param pipe_dimension_ratio: non-dimensional ratio of pipe diameter to pipe thickness.
-        :param length: length of borehole from top to bottom, in m.
-        :param shank_space: radial distance from the borehole center to the pipe center, in m.
-        :param pipe_conductivity: pipe thermal conductivity, in W/m-K.
+        :param pipe_dimension_ratio: ratio of pipe outer diameter to wall thickness.
+        :param length: active borehole length, in m.
+        :param shank_space: radial distance from the borehole center to each pipe center, in m.
+        :param pipe_conductivity: pipe thermal conductivity, in W/(m-K).
         :param pipe_inlet_arrangement: arrangement of the pipe inlets. "ADJACENT", or "DIAGONAL"
-        :param grout_conductivity: grout thermal conductivity, in W/m-K.
-        :param soil_conductivity: soil thermal conductivity, in W/m-K.
-        :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL",  "PROPYLENEGLYCOL", or "WATER"
-        :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
+        :param grout_conductivity: grout thermal conductivity, in W/(m-K).
+        :param soil_conductivity: ground thermal conductivity, in W/(m-K).
+        :param fluid_type: built-in fluid key accepted by scp.get_fluid;
+                           omit when passing fluid.
+        :param fluid_concentration: mixture concentration fraction for a built-in fluid, from 0 to 0.6.
         :param boundary_condition: borehole wall boundary condition. "UNIFORM_HEAT_FLUX" or "UNIFORM_BOREHOLE_WALL_TEMP"
+        :param fluid: existing SecondaryCoolantProps fluid instance, including a
+                      user-defined fluid created by scp.get_fluid.
         """
 
         self._bh_type = BoreholeType.DOUBLE_U_TUBE
@@ -107,6 +121,7 @@ class Borehole:
             soil_conductivity,
             fluid_type,
             fluid_concentration,
+            fluid=fluid,
         )
 
     def init_coaxial_borehole(
@@ -121,26 +136,31 @@ class Borehole:
         length: float,
         grout_conductivity: float,
         soil_conductivity: float,
-        fluid_type: str,
-        fluid_concentration: float,
+        fluid_type: str | None = None,
+        fluid_concentration: float = 0,
         boundary_condition: str = "UNIFORM_HEAT_FLUX",
+        *,
+        fluid: BaseFluid | None = None,
     ) -> None:
         """
         Constructs a grouted coaxial borehole.
 
         :param borehole_diameter: borehole diameter, in m.
         :param outer_pipe_outer_diameter: outer diameter of outer pipe, in m.
-        :param outer_pipe_dimension_ratio: non-dimensional ratio of outer pipe diameter to thickness.
-        :param outer_pipe_conductivity: outer pipe thermal conductivity, in W/m-K.
-        :param inner_pipe_outer_diameter: inner diameter of outer pipe, in m.
-        :param inner_pipe_dimension_ratio: non-dimensional ratio of inner pipe diameter to thickness.
-        :param inner_pipe_conductivity: inner pipe thermal conductivity, in W/m-K.
-        :param length: length of borehole from top to bottom, in m.
-        :param grout_conductivity: grout thermal conductivity, in W/m-K.
-        :param soil_conductivity: pipe thermal conductivity, in W/m-K.
-        :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL",  "PROPYLENEGLYCOL", or "WATER"
-        :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
+        :param outer_pipe_dimension_ratio: ratio of outer-pipe outer diameter to wall thickness.
+        :param outer_pipe_conductivity: outer-pipe thermal conductivity, in W/(m-K).
+        :param inner_pipe_outer_diameter: outer diameter of the inner pipe, in m.
+        :param inner_pipe_dimension_ratio: ratio of inner-pipe outer diameter to wall thickness.
+        :param inner_pipe_conductivity: inner-pipe thermal conductivity, in W/(m-K).
+        :param length: active borehole length, in m.
+        :param grout_conductivity: grout thermal conductivity, in W/(m-K).
+        :param soil_conductivity: ground thermal conductivity, in W/(m-K).
+        :param fluid_type: built-in fluid key accepted by scp.get_fluid;
+                           omit when passing fluid.
+        :param fluid_concentration: mixture concentration fraction for a built-in fluid, from 0 to 0.6.
         :param boundary_condition: borehole wall boundary condition. "UNIFORM_HEAT_FLUX" or "UNIFORM_BOREHOLE_WALL_TEMP"
+        :param fluid: existing SecondaryCoolantProps fluid instance, including a
+                      user-defined fluid created by scp.get_fluid.
         """
 
         self._bh_type = BoreholeType.COAXIAL
@@ -158,6 +178,7 @@ class Borehole:
             soil_conductivity,
             fluid_type,
             fluid_concentration,
+            fluid=fluid,
         )
 
     def init_from_dict(self, inputs: dict):
@@ -189,8 +210,9 @@ class Borehole:
         length = inputs["length"]
         grout_conductivity = inputs["grout_conductivity"]
         soil_conductivity = inputs["soil_conductivity"]
-        fluid_type = inputs["fluid_type"]
-        fluid_concentration = inputs["fluid_concentration"]
+        fluid = inputs.get("fluid")
+        fluid_type = inputs.get("fluid_type")
+        fluid_concentration = inputs.get("fluid_concentration", 0)
 
         if self._bh_type == BoreholeType.SINGLE_U_TUBE:
             pipe_outer_dia_single = inputs["single_u_tube"]["pipe_outer_diameter"]
@@ -210,6 +232,7 @@ class Borehole:
                 fluid_type,
                 fluid_concentration,
                 bc_str,
+                fluid=fluid,
             )
 
         elif self._bh_type == BoreholeType.DOUBLE_U_TUBE:
@@ -232,6 +255,7 @@ class Borehole:
                 fluid_type,
                 fluid_concentration,
                 bc_str,
+                fluid=fluid,
             )
 
         elif self._bh_type == BoreholeType.COAXIAL:
@@ -256,10 +280,25 @@ class Borehole:
                 fluid_type,
                 fluid_concentration,
                 bc_str,
+                fluid=fluid,
             )
 
         else:
             raise NotImplementedError(f'bh_type "{self._bh_type.name}" not implemented')
+
+    def set_fluid(self, fluid: BaseFluid) -> None:
+        """
+        Adopt an existing SecondaryCoolantProps fluid in an initialized borehole.
+
+        This method supports user-defined fluids constructed with scp.get_fluid.
+        All pipe objects in a coaxial model are updated to use the same fluid
+        instance.
+
+        :param fluid: SecondaryCoolantProps fluid instance
+        """
+        if self._bh is None:
+            raise RuntimeError("Initialize the borehole before setting its fluid.")
+        self._bh.set_fluid(fluid)
 
     def calc_bh_resist(self, mass_flow_rate: float, temperature: float) -> float:
         """
@@ -267,7 +306,7 @@ class Borehole:
 
         :param mass_flow_rate: total borehole mass flow rate, in kg/s
         :param temperature: average fluid temperature, in Celsius
-        :return: effective borehole resistance, in K/W-m
+        :return: effective borehole resistance, in K/(W/m)
         """
 
         if self._bh is None:
@@ -304,9 +343,15 @@ class Borehole:
         """
         Computes the fluid convection resistance.
 
-        In the case of coaxial boreholes, the function returns the sum of the convection resistances
-        for the inner pipe and annular region.
+        ``mass_flow_rate`` is the total borehole flow. For a parallel double U-tube,
+        it is divided equally between the two identical U-tubes, consistent with the
+        flow definition used by Claesson and Javed (2019), Equations 42-46.
 
+        In the case of coaxial boreholes, the function returns the sum of the convection resistances
+        at the two surfaces of the annular region.
+
+        :param mass_flow_rate: total borehole mass flow rate, kg/s
+        :param temperature: average fluid temperature, Celsius
         :return: fluid convection, K/(W/m)
         """
 
@@ -314,7 +359,8 @@ class Borehole:
             case BoreholeType.SINGLE_U_TUBE:
                 return cast(SingleUBorehole, self._bh).calc_conv_resist(mass_flow_rate, temperature)
             case BoreholeType.DOUBLE_U_TUBE:
-                return cast(DoubleUTube, self._bh).calc_conv_resist(mass_flow_rate, temperature)
+                # Claesson and Javed (2019), Eqs. 42-46: two identical U-tubes in parallel.
+                return cast(DoubleUTube, self._bh).calc_conv_resist(mass_flow_rate / 2, temperature)
             case BoreholeType.COAXIAL:
                 return sum(cast(Coaxial, self._bh).calc_conv_resist_annulus(mass_flow_rate, temperature))
             case _:
@@ -324,9 +370,16 @@ class Borehole:
         """
         Computes the fluid convection + pipe conduction resistance.
 
-        In the case of coaxial boreholes, this returns the convection resistance of the annulus + the conduction
-        resistance of the outer pipe.
+        ``mass_flow_rate`` is the total borehole flow. For a parallel double U-tube,
+        it is divided equally between the two identical U-tubes, consistent with the
+        flow definition used by Claesson and Javed (2019), Equations 42-46.
 
+        For coaxial boreholes, this returns ``R_c,ao + R_p,a`` from Grundmann
+        (2016), Equation 4.5: convection at the inner surface of the outer pipe plus
+        outer-pipe conduction. It excludes the grout term from Equation 4.5.
+
+        :param mass_flow_rate: total borehole mass flow rate, kg/s
+        :param temperature: average fluid temperature, Celsius
         :return: fluid convection + pipe conduction resistance, K/(W/m)
         """
 
@@ -335,5 +388,9 @@ class Borehole:
 
         if self._bh_type is None:
             raise NotImplementedError(f"{self._bh_type} not implemented.")
+
+        if self._bh_type == BoreholeType.DOUBLE_U_TUBE:
+            # Claesson and Javed (2019), Eqs. 42-46: two identical U-tubes in parallel.
+            return cast(DoubleUTube, self._bh).calc_fluid_pipe_resist(mass_flow_rate / 2, temperature)
 
         return self._bh.calc_fluid_pipe_resist(mass_flow_rate, temperature)
