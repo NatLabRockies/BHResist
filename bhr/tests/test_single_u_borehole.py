@@ -53,3 +53,23 @@ class TestSingleUBorehole(TestCase):
         bh = SingleUBorehole(**self.inputs)
         tolerance = 1e-3
         self.assertAlmostEqual(bh.calc_effective_bh_resistance_ubwt(m_dot=0.5, temp=20), 0.20435, delta=tolerance)
+
+    def test_calc_direct_coupling_resistance_preserves_negative_value(self):
+        inputs = self.inputs | {
+            "borehole_diameter": 0.14,
+            "pipe_dimension_ratio": 11,
+            "shank_space": 0.04,
+            "pipe_conductivity": 0.4,
+            "grout_conductivity": 1.2,
+            "soil_conductivity": 2.5,
+        }
+        bh = SingleUBorehole(**inputs)
+        total_internal_resistance = bh.calc_total_internal_bh_resistance(m_dot=0.5, temp=20)
+        local_borehole_resistance = bh.calc_local_bh_resistance(m_dot=0.5, temp=20)
+        expected = (4 * total_internal_resistance * local_borehole_resistance) / (
+            4 * local_borehole_resistance - total_internal_resistance
+        )
+
+        self.assertLess(expected, 0)
+        actual, _ = bh.calc_direct_coupling_resistance(m_dot=0.5, temp=20)
+        self.assertAlmostEqual(actual, expected)

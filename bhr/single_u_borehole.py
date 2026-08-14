@@ -97,10 +97,6 @@ class SingleUBorehole(UTube):
 
         r_12 = (4 * r_a * r_b) / (4 * r_b - r_a)
 
-        # reset if negative
-        if r_12 < 0:
-            r_12 = 70
-
         resist_bh_direct_coupling = r_12
         return resist_bh_direct_coupling, r_b
 
