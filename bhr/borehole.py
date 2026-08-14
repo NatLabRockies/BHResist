@@ -1,5 +1,7 @@
 from typing import cast
 
+from scp.base_fluid import BaseFluid
+
 from bhr.coaxial_borehole import Coaxial
 from bhr.double_u_borehole import DoubleUTube
 from bhr.enums import BoreholeType, BoundaryCondition
@@ -26,9 +28,11 @@ class Borehole:
         pipe_conductivity: float,
         grout_conductivity: float,
         soil_conductivity: float,
-        fluid_type: str,
+        fluid_type: str | None = None,
         fluid_concentration: float = 0,
         boundary_condition: str = "UNIFORM_HEAT_FLUX",
+        *,
+        fluid: BaseFluid | None = None,
     ) -> None:
         """
         Constructs a grouted single U-tube borehole.
@@ -42,9 +46,12 @@ class Borehole:
         :param pipe_conductivity: pipe thermal conductivity, in W/(m-K).
         :param grout_conductivity: grout thermal conductivity, in W/(m-K).
         :param soil_conductivity: ground thermal conductivity, in W/(m-K).
-        :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL", "PROPYLENEGLYCOL", or "WATER"
-        :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
+        :param fluid_type: built-in fluid key accepted by scp.get_fluid;
+                           omit when passing fluid.
+        :param fluid_concentration: mixture concentration fraction for a built-in fluid, from 0 to 0.6.
         :param boundary_condition: borehole wall boundary condition. "UNIFORM_HEAT_FLUX" or "UNIFORM_BOREHOLE_WALL_TEMP"
+        :param fluid: existing SecondaryCoolantProps fluid instance, including a
+                      user-defined fluid created by scp.get_fluid.
         """
 
         self._bh_type = BoreholeType.SINGLE_U_TUBE
@@ -60,6 +67,7 @@ class Borehole:
             soil_conductivity,
             fluid_type,
             fluid_concentration,
+            fluid=fluid,
         )
 
     def init_double_u_borehole(
@@ -73,9 +81,11 @@ class Borehole:
         pipe_inlet_arrangement: str,
         grout_conductivity: float,
         soil_conductivity: float,
-        fluid_type: str,
+        fluid_type: str | None = None,
         fluid_concentration: float = 0,
         boundary_condition: str = "UNIFORM_HEAT_FLUX",
+        *,
+        fluid: BaseFluid | None = None,
     ) -> None:
         """
         Constructs a grouted double U-tube borehole with U-tubes in parallel.
@@ -89,9 +99,12 @@ class Borehole:
         :param pipe_inlet_arrangement: arrangement of the pipe inlets. "ADJACENT", or "DIAGONAL"
         :param grout_conductivity: grout thermal conductivity, in W/(m-K).
         :param soil_conductivity: ground thermal conductivity, in W/(m-K).
-        :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL",  "PROPYLENEGLYCOL", or "WATER"
-        :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
+        :param fluid_type: built-in fluid key accepted by scp.get_fluid;
+                           omit when passing fluid.
+        :param fluid_concentration: mixture concentration fraction for a built-in fluid, from 0 to 0.6.
         :param boundary_condition: borehole wall boundary condition. "UNIFORM_HEAT_FLUX" or "UNIFORM_BOREHOLE_WALL_TEMP"
+        :param fluid: existing SecondaryCoolantProps fluid instance, including a
+                      user-defined fluid created by scp.get_fluid.
         """
 
         self._bh_type = BoreholeType.DOUBLE_U_TUBE
@@ -108,6 +121,7 @@ class Borehole:
             soil_conductivity,
             fluid_type,
             fluid_concentration,
+            fluid=fluid,
         )
 
     def init_coaxial_borehole(
@@ -122,9 +136,11 @@ class Borehole:
         length: float,
         grout_conductivity: float,
         soil_conductivity: float,
-        fluid_type: str,
-        fluid_concentration: float,
+        fluid_type: str | None = None,
+        fluid_concentration: float = 0,
         boundary_condition: str = "UNIFORM_HEAT_FLUX",
+        *,
+        fluid: BaseFluid | None = None,
     ) -> None:
         """
         Constructs a grouted coaxial borehole.
@@ -139,9 +155,12 @@ class Borehole:
         :param length: active borehole length, in m.
         :param grout_conductivity: grout thermal conductivity, in W/(m-K).
         :param soil_conductivity: ground thermal conductivity, in W/(m-K).
-        :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL",  "PROPYLENEGLYCOL", or "WATER"
-        :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
+        :param fluid_type: built-in fluid key accepted by scp.get_fluid;
+                           omit when passing fluid.
+        :param fluid_concentration: mixture concentration fraction for a built-in fluid, from 0 to 0.6.
         :param boundary_condition: borehole wall boundary condition. "UNIFORM_HEAT_FLUX" or "UNIFORM_BOREHOLE_WALL_TEMP"
+        :param fluid: existing SecondaryCoolantProps fluid instance, including a
+                      user-defined fluid created by scp.get_fluid.
         """
 
         self._bh_type = BoreholeType.COAXIAL
@@ -159,6 +178,7 @@ class Borehole:
             soil_conductivity,
             fluid_type,
             fluid_concentration,
+            fluid=fluid,
         )
 
     def init_from_dict(self, inputs: dict):
@@ -190,8 +210,9 @@ class Borehole:
         length = inputs["length"]
         grout_conductivity = inputs["grout_conductivity"]
         soil_conductivity = inputs["soil_conductivity"]
-        fluid_type = inputs["fluid_type"]
-        fluid_concentration = inputs["fluid_concentration"]
+        fluid = inputs.get("fluid")
+        fluid_type = inputs.get("fluid_type")
+        fluid_concentration = inputs.get("fluid_concentration", 0)
 
         if self._bh_type == BoreholeType.SINGLE_U_TUBE:
             pipe_outer_dia_single = inputs["single_u_tube"]["pipe_outer_diameter"]
@@ -211,6 +232,7 @@ class Borehole:
                 fluid_type,
                 fluid_concentration,
                 bc_str,
+                fluid=fluid,
             )
 
         elif self._bh_type == BoreholeType.DOUBLE_U_TUBE:
@@ -233,6 +255,7 @@ class Borehole:
                 fluid_type,
                 fluid_concentration,
                 bc_str,
+                fluid=fluid,
             )
 
         elif self._bh_type == BoreholeType.COAXIAL:
@@ -257,10 +280,25 @@ class Borehole:
                 fluid_type,
                 fluid_concentration,
                 bc_str,
+                fluid=fluid,
             )
 
         else:
             raise NotImplementedError(f'bh_type "{self._bh_type.name}" not implemented')
+
+    def set_fluid(self, fluid: BaseFluid) -> None:
+        """
+        Adopt an existing SecondaryCoolantProps fluid in an initialized borehole.
+
+        This method supports user-defined fluids constructed with scp.get_fluid.
+        All pipe objects in a coaxial model are updated to use the same fluid
+        instance.
+
+        :param fluid: SecondaryCoolantProps fluid instance
+        """
+        if self._bh is None:
+            raise RuntimeError("Initialize the borehole before setting its fluid.")
+        self._bh.set_fluid(fluid)
 
     def calc_bh_resist(self, mass_flow_rate: float, temperature: float) -> float:
         """

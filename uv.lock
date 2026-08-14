@@ -47,7 +47,7 @@ docs = [
 ]
 
 [package.metadata]
-requires-dist = [{ name = "secondarycoolantprops", specifier = ">=1.4" }]
+requires-dist = [{ name = "secondarycoolantprops", specifier = ">=1.5" }]
 
 [package.metadata.requires-dev]
 dev = [
@@ -663,14 +663,14 @@ wheels = [
 
 [[package]]
 name = "secondarycoolantprops"
-version = "1.4"
+version = "1.5"
 source = { registry = "https://pypi.org/simple" }
 dependencies = [
     { name = "click" },
 ]
-sdist = { url = "https://files.pythonhosted.org/packages/f2/6e/8c6ae405efb15c6957ef2898308fede474e914faa2a649dfad94c8b53602/secondarycoolantprops-1.4.tar.gz", hash = "sha256:0c9115d3dcc922aae814904ea04bd9317a2234eef787fb0c00be21352248efd2", size = 9601, upload-time = "2026-01-09T02:00:03.117Z" }
+sdist = { url = "https://files.pythonhosted.org/packages/21/8a/6c18c2a9b827126363af0ade3b86693156dd0e2c822643da3eda1ffcfa8b/secondarycoolantprops-1.5.tar.gz", hash = "sha256:35928ac70bb1881c162790f06ad82c58801b535ef95a7c5f66480a2bf6d6a830", size = 12453, upload-time = "2026-07-29T21:29:24.007Z" }
 wheels = [
-    { url = "https://files.pythonhosted.org/packages/46/3c/be9686363835fa6031cf111995c377df877a843af0d2888a4b691f75676e/secondarycoolantprops-1.4-py3-none-any.whl", hash = "sha256:5ebbe8da1f8f70b786cad505c77a30a0b5ba390c5d68d81ab118c2029c509986", size = 14027, upload-time = "2026-01-09T02:00:01.974Z" },
+    { url = "https://files.pythonhosted.org/packages/f1/95/0cecfea9a7a45d32b64b1597b4a37d33c6690bf10eba5addca5c7b37e35b/secondarycoolantprops-1.5-py3-none-any.whl", hash = "sha256:08a6a2030653da1215d977d3f24e3a93043465ed85628bdf234e8befacaa7247", size = 17903, upload-time = "2026-07-29T21:29:23.002Z" },
 ]
 
 [[package]]

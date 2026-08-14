@@ -1,9 +1,45 @@
 import unittest
 
+from scp import get_fluid
+
 from bhr.borehole import Borehole
 
 
 class TestBorehole(unittest.TestCase):
+    def test_adopts_user_defined_fluid(self):
+        custom_fluid = get_fluid(
+            "user_defined",
+            name="BoreholeFluid",
+            viscosity=0.002,
+            specific_heat=3200.0,
+            density=1050.0,
+            conductivity=0.42,
+        )
+        bh = Borehole()
+        bh.init_single_u_borehole(
+            borehole_diameter=0.14,
+            pipe_outer_diameter=0.042,
+            pipe_dimension_ratio=11,
+            length=100,
+            shank_space=0.01,
+            pipe_conductivity=0.4,
+            grout_conductivity=1.2,
+            soil_conductivity=2.5,
+            fluid=custom_fluid,
+        )
+
+        self.assertIsNotNone(bh._bh)
+        self.assertIs(bh._bh.fluid, custom_fluid)
+        self.assertGreater(bh.calc_bh_resist(temperature=20, mass_flow_rate=0.5), 0)
+
+        replacement = get_fluid("water")
+        bh.set_fluid(replacement)
+        self.assertIs(bh._bh.fluid, replacement)
+
+    def test_set_fluid_requires_initialized_borehole(self):
+        with self.assertRaisesRegex(RuntimeError, "Initialize the borehole"):
+            Borehole().set_fluid(get_fluid("water"))
+
     def test_init_single_u_uhf(self):
         bh = Borehole()
         bh.init_single_u_borehole(

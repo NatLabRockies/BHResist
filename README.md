@@ -6,6 +6,27 @@ The public calculation methods accept total borehole mass flow rate. For a paral
 
 BHResist is intended to be a lightweight library that can be imported into other Python applications without bulky dependencies.
 
+## Fluid properties
+
+BHResist uses the public fluid API provided by SecondaryCoolantProps 1.5 or newer. Built-in fluids can be selected with the `fluid_type` and `fluid_concentration` initializer arguments.
+
+User-defined fluids can contain constant or temperature-dependent properties:
+
+    from scp import get_fluid
+
+    custom_fluid = get_fluid(
+        "user_defined",
+        name="BoreholeFluid",
+        viscosity=lambda temp: 0.003 - 1.0e-5 * temp,
+        specific_heat=3200.0,
+        density=lambda temp: 1050.0 - 0.4 * temp,
+        conductivity=0.42,
+        t_min=-20.0,
+        t_max=80.0,
+    )
+
+Pass this object as `fluid=custom_fluid` when initializing a borehole and omit `fluid_type` and `fluid_concentration`. An initialized model can adopt another SecondaryCoolantProps fluid with `borehole.set_fluid(custom_fluid)`.
+
 ## Documentation
 
 Documentation for BHResist can be found at https://bhresist.readthedocs.io.

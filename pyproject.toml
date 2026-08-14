@@ -12,7 +12,7 @@ license-files = ["LICENSE"]
 authors = [{ name = "Matt Mitchell", email = "Matt.Mitchell@nlr.gov" }]
 requires-python = ">=3.10"
 dependencies = [
-    "SecondaryCoolantProps>=1.4",
+    "SecondaryCoolantProps>=1.5",
 ]
 
 classifiers = [

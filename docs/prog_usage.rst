@@ -17,6 +17,58 @@ the center-to-center distance between the two pipe legs. For a parallel double
 U-tube, the public mass-flow argument is the combined flow through both
 U-tubes; BHResist assigns half to each U-tube.
 
+Fluid selection
+---------------
+
+BHResist uses the public API from SecondaryCoolantProps 1.5 or newer. Select a
+built-in fluid with the ``fluid_type`` and ``fluid_concentration`` initializer
+arguments. The canonical keys are ``"water"``, ``"ethyl_alcohol"``,
+``"ethylene_glycol"``, ``"methyl_alcohol"``, and ``"propylene_glycol"``.
+Compact uppercase names accepted by earlier BHResist versions remain supported.
+
+SecondaryCoolantProps can also construct a user-defined fluid. Viscosity,
+specific heat, density, and conductivity are required. Each may be a constant
+or a callable that accepts temperature in Celsius::
+
+    from scp import get_fluid
+
+    custom_fluid = get_fluid(
+        "user_defined",
+        name="BoreholeFluid",
+        viscosity=lambda temp: 0.003 - 1.0e-5 * temp,  # Pa-s
+        specific_heat=3200.0,  # J/(kg-K)
+        density=lambda temp: 1050.0 - 0.4 * temp,  # kg/m3
+        conductivity=0.42,  # W/(m-K)
+        freeze_point=-12.0,
+        t_min=-20.0,
+        t_max=80.0,
+    )
+
+Pass the resulting object through the ``fluid`` argument and omit
+``fluid_type`` and ``fluid_concentration``::
+
+    custom_bhr = Borehole()
+    custom_bhr.init_single_u_borehole(
+        borehole_diameter=0.127,
+        pipe_outer_diameter=0.032,
+        pipe_dimension_ratio=11,
+        length=200,
+        shank_space=0.032,
+        pipe_conductivity=0.4,
+        grout_conductivity=1.6,
+        soil_conductivity=2.0,
+        fluid=custom_fluid,
+    )
+
+An initialized model can adopt another SecondaryCoolantProps fluid without
+rebuilding its geometry::
+
+    replacement_fluid = get_fluid("water")
+    custom_bhr.set_fluid(replacement_fluid)
+
+For a coaxial model, ``set_fluid`` updates the model and both internal pipe
+objects to use the same fluid instance.
+
 Single U-tube
 -------------
 
@@ -34,7 +86,7 @@ Single U-tube
         pipe_conductivity=0.4,
         grout_conductivity=1.6,
         soil_conductivity=2.0,
-        fluid_type="PROPYLENEGLYCOL",
+        fluid_type="propylene_glycol",
         fluid_concentration=0.2,
     )
 
@@ -64,7 +116,7 @@ Parallel double U-tube
         pipe_inlet_arrangement="DIAGONAL",
         grout_conductivity=1.6,
         soil_conductivity=2.0,
-        fluid_type="PROPYLENEGLYCOL",
+        fluid_type="propylene_glycol",
         fluid_concentration=0.2,
         boundary_condition="UNIFORM_BOREHOLE_WALL_TEMP",
     )
@@ -100,7 +152,7 @@ Coaxial
         length=200,
         grout_conductivity=1.6,
         soil_conductivity=2.0,
-        fluid_type="PROPYLENEGLYCOL",
+        fluid_type="propylene_glycol",
         fluid_concentration=0.2,
     )
 

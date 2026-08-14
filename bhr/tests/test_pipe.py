@@ -1,6 +1,8 @@
 import unittest
 from math import log
 
+from scp import get_fluid
+
 from bhr.pipe import Pipe
 
 
@@ -38,6 +40,24 @@ class TestPipe(unittest.TestCase):
         self.assertAlmostEqual(p.total_vol, 0.0876, delta=tol)
         self.assertAlmostEqual(p.fluid_vol, 0.0586, delta=tol)
         self.assertAlmostEqual(p.pipe_wall_vol, 0.0289, delta=tol)
+
+    def test_adopts_user_defined_fluid(self):
+        custom_fluid = get_fluid(
+            "user_defined",
+            viscosity=0.002,
+            specific_heat=3200.0,
+            density=1050.0,
+            conductivity=0.42,
+        )
+        inputs = self.inputs.copy()
+        inputs.pop("fluid_type")
+        pipe = Pipe(**inputs, fluid=custom_fluid)
+
+        self.assertIs(pipe.fluid, custom_fluid)
+
+        replacement = get_fluid("water")
+        pipe.set_fluid(replacement)
+        self.assertIs(pipe.fluid, replacement)
 
     def test_mdot_to_re(self):
         p = Pipe(**self.inputs)

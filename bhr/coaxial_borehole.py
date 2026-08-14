@@ -1,6 +1,8 @@
 from math import log, pi
 
-from bhr.fluid import get_fluid
+from scp.base_fluid import BaseFluid
+
+from bhr.fluid import resolve_fluid
 from bhr.pipe import Pipe
 from bhr.utilities import coth, smoothing_function
 
@@ -20,8 +22,10 @@ class Coaxial:
         length: float,
         grout_conductivity: float,
         soil_conductivity: float,
-        fluid_type: str,
-        fluid_concentration: float,
+        fluid_type: str | None = None,
+        fluid_concentration: float = 0,
+        *,
+        fluid: BaseFluid | None = None,
     ):
         """
         Constructs a grouted concentric coaxial borehole model.
@@ -36,14 +40,17 @@ class Coaxial:
         :param length: active borehole length, m
         :param grout_conductivity: grout thermal conductivity, W/(m-K)
         :param soil_conductivity: ground thermal conductivity, W/(m-K)
-        :param fluid_type: fluid identifier supported by :func:`bhr.fluid.get_fluid`
+        :param fluid_type: built-in fluid key accepted by scp.get_fluid;
+                           omit when passing fluid
         :param fluid_concentration: antifreeze fraction from 0 to 0.6; ignored for water
+        :param fluid: existing SecondaryCoolantProps fluid instance, including a
+                      user-defined fluid created by scp.get_fluid
         """
 
         self.borehole_diameter = borehole_diameter
         self.grout_conductivity = grout_conductivity
         self.soil_conductivity = soil_conductivity
-        self.fluid = get_fluid(fluid_type, fluid_concentration)
+        self.fluid = resolve_fluid(fluid_type, fluid_concentration, fluid=fluid)
         self.length = length
 
         self.outer_pipe = Pipe(
@@ -51,20 +58,28 @@ class Coaxial:
             outer_pipe_dimension_ratio,
             length,
             outer_pipe_conductivity,
-            fluid_type,
-            fluid_concentration,
+            fluid=self.fluid,
         )
         self.inner_pipe = Pipe(
             inner_pipe_outer_diameter,
             inner_pipe_dimension_ratio,
             length,
             inner_pipe_conductivity,
-            fluid_type,
-            fluid_concentration,
+            fluid=self.fluid,
         )
 
         self.annular_hydraulic_diameter = self.outer_pipe.pipe_inner_diameter - self.inner_pipe.pipe_outer_diameter
         self.annular_wetted_perimeter = pi * (self.outer_pipe.pipe_inner_diameter + self.inner_pipe.pipe_outer_diameter)
+
+    def set_fluid(self, fluid: BaseFluid) -> None:
+        """
+        Adopt an existing SecondaryCoolantProps fluid throughout the coaxial model.
+
+        :param fluid: SecondaryCoolantProps fluid instance
+        """
+        self.fluid = resolve_fluid(fluid=fluid)
+        self.inner_pipe.set_fluid(self.fluid)
+        self.outer_pipe.set_fluid(self.fluid)
 
     def re_annulus(self, m_dot, temp):
         """

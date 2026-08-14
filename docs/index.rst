@@ -20,6 +20,10 @@ U-tubes. Thermal resistances are reported in K/(W/m), equivalently m-K/W.
 BHResist is intended to be a lightweight library that can be imported into
 other Python applications without bulky dependencies.
 
+Fluid properties are supplied by SecondaryCoolantProps 1.5 or newer. Built-in
+and user-defined fluids created by its public ``scp.get_fluid`` API can be used
+directly by BHResist.
+
 References
 ----------
 

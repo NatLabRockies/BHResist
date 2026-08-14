@@ -1,6 +1,8 @@
 from math import log as ln
 from math import pi, sqrt
 
+from scp.base_fluid import BaseFluid
+
 from bhr.enums import DoubleUPipeInletArrangement
 from bhr.u_tube import UTube
 from bhr.utilities import coth
@@ -20,8 +22,10 @@ class DoubleUTube(UTube):
         pipe_inlet_arrangement: str,
         grout_conductivity: float,
         soil_conductivity: float,
-        fluid_type: str,
+        fluid_type: str | None = None,
         fluid_concentration: float = 0,
+        *,
+        fluid: BaseFluid | None = None,
     ):
         """
         Constructs a grouted parallel double U-tube borehole model.
@@ -39,8 +43,11 @@ class DoubleUTube(UTube):
         :param pipe_inlet_arrangement: inlet arrangement, ``"ADJACENT"`` or ``"DIAGONAL"``
         :param grout_conductivity: grout thermal conductivity, W/(m-K)
         :param soil_conductivity: ground thermal conductivity, W/(m-K)
-        :param fluid_type: fluid identifier supported by :func:`bhr.fluid.get_fluid`
+        :param fluid_type: built-in fluid key accepted by scp.get_fluid;
+                           omit when passing fluid
         :param fluid_concentration: antifreeze fraction from 0 to 0.6; ignored for water
+        :param fluid: existing SecondaryCoolantProps fluid instance, including a
+                      user-defined fluid created by scp.get_fluid
         """
         super().__init__(
             pipe_outer_diameter,
@@ -50,6 +57,7 @@ class DoubleUTube(UTube):
             pipe_conductivity,
             fluid_type,
             fluid_concentration,
+            fluid=fluid,
         )
 
         # static parameters

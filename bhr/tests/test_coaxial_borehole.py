@@ -1,5 +1,7 @@
 from unittest import TestCase
 
+from scp import get_fluid
+
 from bhr.coaxial_borehole import Coaxial
 
 
@@ -23,6 +25,29 @@ class TestCoaxialBorehole(TestCase):
     def test_init(self):
         coax = Coaxial(**self.inputs)
         self.assertEqual(coax.borehole_diameter, 0.115)
+
+    def test_adopts_user_defined_fluid_throughout_model(self):
+        custom_fluid = get_fluid(
+            "user_defined",
+            viscosity=0.002,
+            specific_heat=3200.0,
+            density=1050.0,
+            conductivity=0.42,
+        )
+        inputs = self.inputs.copy()
+        inputs.pop("fluid_type")
+        inputs.pop("fluid_concentration")
+        coax = Coaxial(**inputs, fluid=custom_fluid)
+
+        self.assertIs(coax.fluid, custom_fluid)
+        self.assertIs(coax.inner_pipe.fluid, custom_fluid)
+        self.assertIs(coax.outer_pipe.fluid, custom_fluid)
+
+        replacement = get_fluid("water")
+        coax.set_fluid(replacement)
+        self.assertIs(coax.fluid, replacement)
+        self.assertIs(coax.inner_pipe.fluid, replacement)
+        self.assertIs(coax.outer_pipe.fluid, replacement)
 
     def test_re_annulus(self):
         coax = Coaxial(**self.inputs)

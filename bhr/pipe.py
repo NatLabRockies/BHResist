@@ -1,6 +1,8 @@
 from math import log, pi
 
-from bhr.fluid import get_fluid
+from scp.base_fluid import BaseFluid
+
+from bhr.fluid import resolve_fluid
 from bhr.utilities import inch_to_m, smoothing_function
 
 
@@ -11,10 +13,12 @@ class Pipe:
         pipe_dimension_ratio: float,
         pipe_length: float,
         pipe_conductivity: float,
-        fluid_type: str,
+        fluid_type: str | None = None,
         fluid_concentration: float = 0,
+        *,
+        fluid: BaseFluid | None = None,
     ):
-        self.fluid = get_fluid(fluid_type, fluid_concentration)
+        self.fluid = resolve_fluid(fluid_type, fluid_concentration, fluid=fluid)
 
         # ratio of outer diameter to wall thickness
         self.dimension_ratio = pipe_dimension_ratio
@@ -43,6 +47,16 @@ class Pipe:
         self.total_vol = self.area_cr_outer * self.pipe_length
         self.fluid_vol = self.area_cr_inner * self.pipe_length
         self.pipe_wall_vol = self.area_cr_pipe * self.pipe_length
+
+    def set_fluid(self, fluid: BaseFluid) -> None:
+        """
+        Adopt an existing SecondaryCoolantProps fluid instance.
+
+        This supports user-defined fluids created by scp.get_fluid.
+
+        :param fluid: SecondaryCoolantProps fluid instance
+        """
+        self.fluid = resolve_fluid(fluid=fluid)
 
     @staticmethod
     def get_inner_dia(outer_dia: float, dimension_ratio: float) -> float:
