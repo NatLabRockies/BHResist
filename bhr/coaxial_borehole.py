@@ -246,14 +246,13 @@ class Coaxial:
 
     def calc_fluid_pipe_resist(self, m_dot, temp):
         """
-        Calculates the combined convection resistance of the annular space
+        Calculates the convection resistance at the inner surface of the outer pipe
         and the conduction resistance of the outer pipe.
         :param m_dot: mass flow rate, kg/s
         :param temp: temperature, C
-        :return: annular convection resistance and outer pipe conduction resistance, K/(W/m)
+        :return: outer annular convection resistance and outer pipe conduction resistance, K/(W/m)
         """
 
         _, r_cond_outer_pipe = self.calc_cond_resist()
-        r_conv_outside_inner_pipe = self.calc_conv_resist_annulus(m_dot, temp)[0]
         r_conv_inside_outer_pipe = self.calc_conv_resist_annulus(m_dot, temp)[1]
-        return r_cond_outer_pipe + r_conv_outside_inner_pipe + r_conv_inside_outer_pipe
+        return r_cond_outer_pipe + r_conv_inside_outer_pipe

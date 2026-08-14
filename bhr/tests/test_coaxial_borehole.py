@@ -76,6 +76,14 @@ class TestCoaxialBorehole(TestCase):
         # turbulent flow
         self.assertAlmostEqual(coax.calc_local_bh_resistance(m_dot=0.5, temp=20)[0], 0.2381, delta=1e-3)
 
+    def test_calc_fluid_pipe_resist_uses_outer_annulus_path(self):
+        coax = Coaxial(**self.inputs)
+        _, outer_pipe_conduction = coax.calc_cond_resist()
+        _, outer_annulus_convection = coax.calc_conv_resist_annulus(m_dot=0.5, temp=20)
+
+        expected = outer_pipe_conduction + outer_annulus_convection
+        self.assertAlmostEqual(coax.calc_fluid_pipe_resist(m_dot=0.5, temp=20), expected)
+
     def test_calc_effective_bh_resistance_uhf(self):
         coax = Coaxial(**self.inputs)
 

@@ -305,7 +305,7 @@ class Borehole:
         Computes the fluid convection resistance.
 
         In the case of coaxial boreholes, the function returns the sum of the convection resistances
-        for the inner pipe and annular region.
+        at the two surfaces of the annular region.
 
         :return: fluid convection, K/(W/m)
         """
@@ -314,7 +314,7 @@ class Borehole:
             case BoreholeType.SINGLE_U_TUBE:
                 return cast(SingleUBorehole, self._bh).calc_conv_resist(mass_flow_rate, temperature)
             case BoreholeType.DOUBLE_U_TUBE:
-                return cast(DoubleUTube, self._bh).calc_conv_resist(mass_flow_rate, temperature)
+                return cast(DoubleUTube, self._bh).calc_conv_resist(mass_flow_rate / 2, temperature)
             case BoreholeType.COAXIAL:
                 return sum(cast(Coaxial, self._bh).calc_conv_resist_annulus(mass_flow_rate, temperature))
             case _:
@@ -335,5 +335,8 @@ class Borehole:
 
         if self._bh_type is None:
             raise NotImplementedError(f"{self._bh_type} not implemented.")
+
+        if self._bh_type == BoreholeType.DOUBLE_U_TUBE:
+            return cast(DoubleUTube, self._bh).calc_fluid_pipe_resist(mass_flow_rate / 2, temperature)
 
         return self._bh.calc_fluid_pipe_resist(mass_flow_rate, temperature)

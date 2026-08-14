@@ -105,8 +105,8 @@ class TestBorehole(unittest.TestCase):
         # only pass flow rate, so pipe resistance should be computed in the process of this call
         self.assertAlmostEqual(bh.calc_bh_resist(temperature=20, mass_flow_rate=0.4154), 0.1090, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.045761, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.003270, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.049032, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.006077, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.051838, delta=1e-4)
 
     def test_init_double_u_ubwt(self):
         bh = Borehole()
@@ -128,8 +128,31 @@ class TestBorehole(unittest.TestCase):
         # only pass flow rate, so pipe resistance should be computed in the process of this call
         self.assertAlmostEqual(bh.calc_bh_resist(temperature=20, mass_flow_rate=0.4154), 0.1065, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.045761, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.003270, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.049032, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.006077, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.051838, delta=1e-4)
+
+    def test_double_u_component_resistances_use_per_circuit_flow(self):
+        bh = Borehole()
+        bh.init_double_u_borehole(
+            borehole_diameter=0.115,
+            pipe_outer_diameter=0.032,
+            pipe_dimension_ratio=18.9,
+            length=200,
+            shank_space=0.02263,
+            pipe_conductivity=0.389,
+            pipe_inlet_arrangement="ADJACENT",
+            grout_conductivity=1.5,
+            soil_conductivity=3,
+            fluid_type="WATER",
+        )
+
+        total_mass_flow_rate = 0.5
+        per_circuit_mass_flow_rate = total_mass_flow_rate / 2
+        expected_fluid_resistance = bh._bh.calc_conv_resist(per_circuit_mass_flow_rate, 20)
+        expected_fluid_pipe_resistance = bh._bh.calc_fluid_pipe_resist(per_circuit_mass_flow_rate, 20)
+
+        self.assertAlmostEqual(bh.calc_fluid_resist(total_mass_flow_rate, 20), expected_fluid_resistance)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(total_mass_flow_rate, 20), expected_fluid_pipe_resistance)
 
     def test_init_double_u_from_dict(self):
         inputs = {
@@ -156,8 +179,8 @@ class TestBorehole(unittest.TestCase):
         # only pass flow rate, so pipe resistance should be computed in the process of this call
         self.assertAlmostEqual(bh.calc_bh_resist(temperature=20, mass_flow_rate=0.4154), 0.1090, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.045761, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.003270, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.049032, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.006077, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.051838, delta=1e-4)
 
     def test_init_coaxial_uhf(self):
         bh = Borehole()
@@ -180,7 +203,7 @@ class TestBorehole(unittest.TestCase):
         self.assertAlmostEqual(bh.calc_bh_resist(mass_flow_rate=0.5, temperature=20), 0.18128, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.082102, delta=1e-4)
         self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.008727, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.090829, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.085416, delta=1e-4)
 
     def test_init_coaxial_ubwt(self):
         bh = Borehole()
@@ -204,7 +227,7 @@ class TestBorehole(unittest.TestCase):
         self.assertAlmostEqual(bh.calc_bh_resist(mass_flow_rate=0.5, temperature=20), 0.18454, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.082102, delta=1e-4)
         self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.00872, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.09082, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.085416, delta=1e-4)
 
     def test_init_coaxial_from_dict(self):
         inputs = {
@@ -233,4 +256,4 @@ class TestBorehole(unittest.TestCase):
         self.assertAlmostEqual(bh.calc_bh_resist(mass_flow_rate=0.5, temperature=20), 0.18128, delta=1e-4)
         self.assertAlmostEqual(bh.calc_pipe_cond_resist(), 0.082102, delta=1e-4)
         self.assertAlmostEqual(bh.calc_fluid_resist(temperature=20, mass_flow_rate=0.5), 0.00872, delta=1e-4)
-        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.09082, delta=1e-4)
+        self.assertAlmostEqual(bh.calc_fluid_pipe_resist(temperature=20, mass_flow_rate=0.5), 0.085416, delta=1e-4)
