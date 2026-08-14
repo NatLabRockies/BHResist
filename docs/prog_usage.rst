@@ -1,10 +1,26 @@
 Preferred Programmatic Usage
 ============================
 
-For programmatic usage, the preferred approach is for users to directly consume
-the borehole class directly in your applications.
+Use :class:`bhr.borehole.Borehole` as the public interface. Initialize one
+supported borehole configuration, then call
+:meth:`bhr.borehole.Borehole.calc_bh_resist` with the total borehole mass
+flow rate and mean fluid temperature. The result is the effective borehole
+resistance, :math:`R_b^*`, in K/(W/m).
 
-Example usage for a single u-tube borehole::
+The default boundary condition is ``"UNIFORM_HEAT_FLUX"``. Set
+``boundary_condition="UNIFORM_BOREHOLE_WALL_TEMP"`` during initialization
+to use the uniform borehole-wall-temperature formulation.
+
+For both U-tube configurations, ``shank_space`` is the radial distance from
+the borehole center to a pipe center. For a symmetric single U-tube, it is half
+the center-to-center distance between the two pipe legs. For a parallel double
+U-tube, the public mass-flow argument is the combined flow through both
+U-tubes; BHResist assigns half to each U-tube.
+
+Single U-tube
+-------------
+
+::
 
     from bhr.borehole import Borehole
 
@@ -22,16 +38,18 @@ Example usage for a single u-tube borehole::
         fluid_concentration=0.2,
     )
 
-    m_flow_borehole = 0.5 # kg/s
-    temp = 20 # celsius
-    print(f"{single_bhr.calc_bh_resist(m_flow_borehole, temp):0.5f}")
-
-Note: Shank spacing `s` is reference from the borehole center to the tube center.
+    mass_flow_rate = 0.5  # kg/s
+    temperature = 20.0  # Celsius
+    print(f"{single_bhr.calc_bh_resist(mass_flow_rate, temperature):0.5f}")
 
 .. image:: images/single-u.webp
    :width: 600
+   :alt: Cross-section of a single U-tube borehole
 
-Example usage for double u-tube borehole::
+Parallel double U-tube
+----------------------
+
+::
 
     from bhr.borehole import Borehole
 
@@ -51,17 +69,22 @@ Example usage for double u-tube borehole::
         boundary_condition="UNIFORM_BOREHOLE_WALL_TEMP",
     )
 
-    m_flow_borehole = 0.5 # kg/s
-    temp = 20 # celsius
-    print(f"{double_bhr.calc_bh_resist(m_flow_borehole, temp):0.5f}")
+    mass_flow_rate = 0.5  # kg/s total; 0.25 kg/s per U-tube
+    temperature = 20.0  # Celsius
+    print(f"{double_bhr.calc_bh_resist(mass_flow_rate, temperature):0.5f}")
 
 .. image:: images/double-u_adjacent.webp
    :width: 600
+   :alt: Cross-section of a double U-tube with adjacent inlet pipes
 
 .. image:: images/double-u_diagonal.webp
    :width: 600
+   :alt: Cross-section of a double U-tube with diagonal inlet pipes
 
-Example usage for coaxial borehole::
+Coaxial
+-------
+
+::
 
     from bhr.borehole import Borehole
 
@@ -81,12 +104,13 @@ Example usage for coaxial borehole::
         fluid_concentration=0.2,
     )
 
-    m_flow_borehole = 0.5 # kg/s
-    temp = 20 # celsius
-    print(f"{coaxial_bhr.calc_bh_resist(m_flow_borehole, temp):0.5f}")
+    mass_flow_rate = 0.5  # kg/s
+    temperature = 20.0  # Celsius
+    print(f"{coaxial_bhr.calc_bh_resist(mass_flow_rate, temperature):0.5f}")
 
 .. image:: images/coaxial.webp
    :width: 600
+   :alt: Cross-section of a concentric coaxial borehole
 
 .. toctree::
    :maxdepth: 2

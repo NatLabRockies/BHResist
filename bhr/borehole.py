@@ -31,16 +31,17 @@ class Borehole:
         boundary_condition: str = "UNIFORM_HEAT_FLUX",
     ) -> None:
         """
-        Constructs a grouted single u-tube borehole.
+        Constructs a grouted single U-tube borehole.
 
         :param borehole_diameter: borehole diameter, in m.
         :param pipe_outer_diameter: outer diameter of the pipe, in m.
-        :param pipe_dimension_ratio: non-dimensional ratio of pipe diameter to pipe thickness.
-        :param length: length of borehole from top to bottom, in m.
-        :param shank_space: radial distance from the borehole center to the pipe center, in m.
-        :param pipe_conductivity: pipe thermal conductivity, in W/m-K.
-        :param grout_conductivity: grout thermal conductivity, in W/m-K.
-        :param soil_conductivity: soil thermal conductivity, in W/m-K.
+        :param pipe_dimension_ratio: ratio of pipe outer diameter to wall thickness.
+        :param length: active borehole length, in m.
+        :param shank_space: radial distance from the borehole center to a pipe center, in m;
+                            half the center-to-center distance between the two legs.
+        :param pipe_conductivity: pipe thermal conductivity, in W/(m-K).
+        :param grout_conductivity: grout thermal conductivity, in W/(m-K).
+        :param soil_conductivity: ground thermal conductivity, in W/(m-K).
         :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL", "PROPYLENEGLYCOL", or "WATER"
         :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
         :param boundary_condition: borehole wall boundary condition. "UNIFORM_HEAT_FLUX" or "UNIFORM_BOREHOLE_WALL_TEMP"
@@ -77,17 +78,17 @@ class Borehole:
         boundary_condition: str = "UNIFORM_HEAT_FLUX",
     ) -> None:
         """
-        Constructs a grouted double u-tube borehole with u-tubes in parallel.
+        Constructs a grouted double U-tube borehole with U-tubes in parallel.
 
         :param borehole_diameter: borehole diameter, in m.
         :param pipe_outer_diameter: outer diameter of the pipe, in m.
-        :param pipe_dimension_ratio: non-dimensional ratio of pipe diameter to pipe thickness.
-        :param length: length of borehole from top to bottom, in m.
-        :param shank_space: radial distance from the borehole center to the pipe center, in m.
-        :param pipe_conductivity: pipe thermal conductivity, in W/m-K.
+        :param pipe_dimension_ratio: ratio of pipe outer diameter to wall thickness.
+        :param length: active borehole length, in m.
+        :param shank_space: radial distance from the borehole center to each pipe center, in m.
+        :param pipe_conductivity: pipe thermal conductivity, in W/(m-K).
         :param pipe_inlet_arrangement: arrangement of the pipe inlets. "ADJACENT", or "DIAGONAL"
-        :param grout_conductivity: grout thermal conductivity, in W/m-K.
-        :param soil_conductivity: soil thermal conductivity, in W/m-K.
+        :param grout_conductivity: grout thermal conductivity, in W/(m-K).
+        :param soil_conductivity: ground thermal conductivity, in W/(m-K).
         :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL",  "PROPYLENEGLYCOL", or "WATER"
         :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
         :param boundary_condition: borehole wall boundary condition. "UNIFORM_HEAT_FLUX" or "UNIFORM_BOREHOLE_WALL_TEMP"
@@ -130,14 +131,14 @@ class Borehole:
 
         :param borehole_diameter: borehole diameter, in m.
         :param outer_pipe_outer_diameter: outer diameter of outer pipe, in m.
-        :param outer_pipe_dimension_ratio: non-dimensional ratio of outer pipe diameter to thickness.
-        :param outer_pipe_conductivity: outer pipe thermal conductivity, in W/m-K.
-        :param inner_pipe_outer_diameter: inner diameter of outer pipe, in m.
-        :param inner_pipe_dimension_ratio: non-dimensional ratio of inner pipe diameter to thickness.
-        :param inner_pipe_conductivity: inner pipe thermal conductivity, in W/m-K.
-        :param length: length of borehole from top to bottom, in m.
-        :param grout_conductivity: grout thermal conductivity, in W/m-K.
-        :param soil_conductivity: pipe thermal conductivity, in W/m-K.
+        :param outer_pipe_dimension_ratio: ratio of outer-pipe outer diameter to wall thickness.
+        :param outer_pipe_conductivity: outer-pipe thermal conductivity, in W/(m-K).
+        :param inner_pipe_outer_diameter: outer diameter of the inner pipe, in m.
+        :param inner_pipe_dimension_ratio: ratio of inner-pipe outer diameter to wall thickness.
+        :param inner_pipe_conductivity: inner-pipe thermal conductivity, in W/(m-K).
+        :param length: active borehole length, in m.
+        :param grout_conductivity: grout thermal conductivity, in W/(m-K).
+        :param soil_conductivity: ground thermal conductivity, in W/(m-K).
         :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL",  "PROPYLENEGLYCOL", or "WATER"
         :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
         :param boundary_condition: borehole wall boundary condition. "UNIFORM_HEAT_FLUX" or "UNIFORM_BOREHOLE_WALL_TEMP"
@@ -267,7 +268,7 @@ class Borehole:
 
         :param mass_flow_rate: total borehole mass flow rate, in kg/s
         :param temperature: average fluid temperature, in Celsius
-        :return: effective borehole resistance, in K/W-m
+        :return: effective borehole resistance, in K/(W/m)
         """
 
         if self._bh is None:

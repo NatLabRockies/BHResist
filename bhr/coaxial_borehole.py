@@ -6,6 +6,8 @@ from bhr.utilities import coth, smoothing_function
 
 
 class Coaxial:
+    """One-dimensional resistance-network model for a grouted coaxial borehole."""
+
     def __init__(
         self,
         borehole_diameter: float,
@@ -22,20 +24,20 @@ class Coaxial:
         fluid_concentration: float,
     ):
         """
-        Implementation for computing borehole thermal resistance for a grouted coaxial borehole.
+        Constructs a grouted concentric coaxial borehole model.
 
-        :param borehole_diameter: borehole diameter, in m.
-        :param outer_pipe_outer_diameter: outer diameter of outer pipe, in m.
-        :param outer_pipe_dimension_ratio: non-dimensional ratio of outer pipe diameter to thickness.
-        :param outer_pipe_conductivity: outer pipe thermal conductivity, in W/m-K.
-        :param inner_pipe_outer_diameter: inner diameter of outer pipe, in m.
-        :param inner_pipe_dimension_ratio: non-dimensional ratio of inner pipe diameter to thickness.
-        :param inner_pipe_conductivity: inner pipe thermal conductivity, in W/m-K.
-        :param length: length of borehole from top to bottom, in m.
-        :param grout_conductivity: grout thermal conductivity, in W/m-K.
-        :param soil_conductivity: pipe thermal conductivity, in W/m-K.
-        :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL",  "PROPYLENEGLYCOL", or "WATER"
-        :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
+        :param borehole_diameter: borehole diameter, m
+        :param outer_pipe_outer_diameter: outer diameter of the outer pipe, m
+        :param outer_pipe_dimension_ratio: ratio of outer-pipe outer diameter to wall thickness
+        :param outer_pipe_conductivity: outer-pipe thermal conductivity, W/(m-K)
+        :param inner_pipe_outer_diameter: outer diameter of the inner pipe, m
+        :param inner_pipe_dimension_ratio: ratio of inner-pipe outer diameter to wall thickness
+        :param inner_pipe_conductivity: inner-pipe thermal conductivity, W/(m-K)
+        :param length: active borehole length, m
+        :param grout_conductivity: grout thermal conductivity, W/(m-K)
+        :param soil_conductivity: ground thermal conductivity, W/(m-K)
+        :param fluid_type: fluid identifier supported by :func:`bhr.fluid.get_fluid`
+        :param fluid_concentration: antifreeze fraction from 0 to 0.6; ignored for water
         """
 
         self.borehole_diameter = borehole_diameter
@@ -172,9 +174,8 @@ class Coaxial:
 
         :param m_dot: mass flow rate, kg/s
         :param temp: temperature, C
-        :return: total_series_resist: sum of ``R_a`` and ``R_b``, K/(W/m)
-        :return: r_internal_resist: local internal borehole resistance ``R_a``, K/(W/m)
-        :return: r_borehole_resist: local borehole resistance ``R_b``, K/(W/m)
+        :return: resistance list ``[R_a + R_b, R_a, R_b]``, with each value
+                 in K/(W/m)
 
         """
         # resistances progressing from inside to outside

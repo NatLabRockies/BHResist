@@ -7,6 +7,8 @@ from bhr.utilities import coth
 
 
 class DoubleUTube(UTube):
+    """First-order multipole model for a grouted parallel double U-tube borehole."""
+
     def __init__(
         self,
         borehole_diameter: float,
@@ -21,6 +23,25 @@ class DoubleUTube(UTube):
         fluid_type: str,
         fluid_concentration: float = 0,
     ):
+        """
+        Constructs a grouted parallel double U-tube borehole model.
+
+        The resistance equations follow Claesson and Javed (2019), "Explicit
+        Multipole Formulas and Thermal Network Models for Calculating Thermal
+        Resistances of Double U-Pipe Borehole Heat Exchangers."
+
+        :param borehole_diameter: borehole diameter, m
+        :param pipe_outer_diameter: outer diameter of one pipe leg, m
+        :param pipe_dimension_ratio: ratio of pipe outer diameter to wall thickness
+        :param length: active borehole length, m
+        :param shank_space: radial distance from the borehole center to each pipe center, m
+        :param pipe_conductivity: pipe thermal conductivity, W/(m-K)
+        :param pipe_inlet_arrangement: inlet arrangement, ``"ADJACENT"`` or ``"DIAGONAL"``
+        :param grout_conductivity: grout thermal conductivity, W/(m-K)
+        :param soil_conductivity: ground thermal conductivity, W/(m-K)
+        :param fluid_type: fluid identifier supported by :func:`bhr.fluid.get_fluid`
+        :param fluid_concentration: antifreeze fraction from 0 to 0.6; ignored for water
+        """
         super().__init__(
             pipe_outer_diameter,
             pipe_dimension_ratio,
@@ -30,31 +51,6 @@ class DoubleUTube(UTube):
             fluid_type,
             fluid_concentration,
         )
-
-        """
-        Implementation for computing borehole thermal resistance for grouted boreholes with parallel double u-tubes.
-
-        Relies primarily on the following references:
-
-        Javed, S. & Spitler, J.D. 2017. 'Accuracy of Borehole Thermal Resistance Calculation Methods
-        for Grouted Single U-tube Ground Heat Exchangers.' Applied Energy.187:790-806.
-
-        Claesson, Johan, and Saqib Javed. 2019. “Explicit Multipole Formulas and Thermal Network Models
-        for Calculating Thermal Resistances of Double U-Pipe Borehole Heat Exchangers.” Science and Technology for
-        the Built Environment 25 (8): 980-92. doi:10.1080/23744731.2019.1620565.
-
-        :param borehole_diameter: borehole diameter, in m.
-        :param pipe_outer_diameter: outer diameter of the pipe, in m.
-        :param pipe_dimension_ratio: non-dimensional ratio of pipe diameter to pipe thickness.
-        :param length: length of borehole from top to bottom, in m.
-        :param shank_space: radial distance from the borehole center to the pipe center, in m.
-        :param pipe_conductivity: pipe thermal conductivity, in W/m-K.
-        :param pipe_inlet_arrangement: arrangement of the pipe inlets. "ADJACENT", or "DIAGONAL"
-        :param grout_conductivity: grout thermal conductivity, in W/m-K.
-        :param soil_conductivity: soil thermal conductivity, in W/m-K.
-        :param fluid_type: fluid type. "ETHYLALCOHOL", "ETHYLENEGLYCOL", "METHYLALCOHOL",  "PROPYLENEGLYCOL", or "WATER"
-        :param fluid_concentration: fractional concentration of antifreeze mixture, from 0-0.6.
-        """
 
         # static parameters
         self.borehole_diameter = borehole_diameter
