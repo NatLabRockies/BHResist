@@ -304,9 +304,15 @@ class Borehole:
         """
         Computes the fluid convection resistance.
 
+        ``mass_flow_rate`` is the total borehole flow. For a parallel double U-tube,
+        it is divided equally between the two identical U-tubes, consistent with the
+        flow definition used by Claesson and Javed (2019), Equations 42-46.
+
         In the case of coaxial boreholes, the function returns the sum of the convection resistances
         at the two surfaces of the annular region.
 
+        :param mass_flow_rate: total borehole mass flow rate, kg/s
+        :param temperature: average fluid temperature, Celsius
         :return: fluid convection, K/(W/m)
         """
 
@@ -314,6 +320,7 @@ class Borehole:
             case BoreholeType.SINGLE_U_TUBE:
                 return cast(SingleUBorehole, self._bh).calc_conv_resist(mass_flow_rate, temperature)
             case BoreholeType.DOUBLE_U_TUBE:
+                # Claesson and Javed (2019), Eqs. 42-46: two identical U-tubes in parallel.
                 return cast(DoubleUTube, self._bh).calc_conv_resist(mass_flow_rate / 2, temperature)
             case BoreholeType.COAXIAL:
                 return sum(cast(Coaxial, self._bh).calc_conv_resist_annulus(mass_flow_rate, temperature))
@@ -324,9 +331,16 @@ class Borehole:
         """
         Computes the fluid convection + pipe conduction resistance.
 
-        In the case of coaxial boreholes, this returns the convection resistance of the annulus + the conduction
-        resistance of the outer pipe.
+        ``mass_flow_rate`` is the total borehole flow. For a parallel double U-tube,
+        it is divided equally between the two identical U-tubes, consistent with the
+        flow definition used by Claesson and Javed (2019), Equations 42-46.
 
+        For coaxial boreholes, this returns ``R_c,ao + R_p,a`` from Grundmann
+        (2016), Equation 4.5: convection at the inner surface of the outer pipe plus
+        outer-pipe conduction. It excludes the grout term from Equation 4.5.
+
+        :param mass_flow_rate: total borehole mass flow rate, kg/s
+        :param temperature: average fluid temperature, Celsius
         :return: fluid convection + pipe conduction resistance, K/(W/m)
         """
 
@@ -337,6 +351,7 @@ class Borehole:
             raise NotImplementedError(f"{self._bh_type} not implemented.")
 
         if self._bh_type == BoreholeType.DOUBLE_U_TUBE:
+            # Claesson and Javed (2019), Eqs. 42-46: two identical U-tubes in parallel.
             return cast(DoubleUTube, self._bh).calc_fluid_pipe_resist(mass_flow_rate / 2, temperature)
 
         return self._bh.calc_fluid_pipe_resist(mass_flow_rate, temperature)

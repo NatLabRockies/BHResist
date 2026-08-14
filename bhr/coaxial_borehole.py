@@ -162,10 +162,13 @@ class Coaxial:
 
     def calc_local_bh_resistance(self, m_dot, temp):
         """
+        Calculates the local resistance branches for a concentric coaxial borehole.
+
         Grundmann, Rachel Marie. "Improved design methods for ground heat exchangers."
         Master's thesis, Oklahoma State University, 2016.
 
-        Eqns 4.4 and 4.5
+        Equation 4.4 defines the fluid-to-fluid short-circuit resistance ``R_12 = R_a``.
+        Equation 4.5 defines the annular-fluid-to-borehole-wall resistance ``R_b``.
 
         :param m_dot: mass flow rate, kg/s
         :param temp: temperature, C
@@ -183,7 +186,10 @@ class Coaxial:
             2 * pi * self.grout_conductivity
         )
 
+        # Grundmann (2016), Eq. 4.4: R_12 = R_a = R_c,dti + R_p,dt + R_c,ai.
         r_internal_resist = sum([r_conv_inner_pipe, r_cond_inner_pipe, r_conv_outside_inner_pipe])
+
+        # Grundmann (2016), Eq. 4.5: R_b = R_c,ao + R_p,a + R_g.
         r_borehole_resist = sum([r_conv_inside_outer_pipe, r_cond_outer_pipe, r_cond_grout])
         local_bh_resist = r_internal_resist + r_borehole_resist
 
@@ -204,6 +210,7 @@ class Coaxial:
 
         _, r_a, r_b = self.calc_local_bh_resistance(m_dot, temp)
         rv = self.length / (m_dot * self.fluid.cp(temp))  # (K/(w/m)) thermal resistance factor
+        # Grundmann (2016), Eq. 4.33: R_b* = R_b + R_v^2 / (3 R_a).
         effective_bhr_uhf = r_b + 1 / (3 * r_a) * rv**2
 
         return effective_bhr_uhf
@@ -223,7 +230,10 @@ class Coaxial:
 
         _, r_a, r_b = self.calc_local_bh_resistance(m_dot, temp)
         rv = self.length / (m_dot * self.fluid.cp(temp))  # (K/(w/m)) thermal resistance factor
+        # Grundmann (2016), Eq. 4.29: eta accounts for axial fluid-temperature variation.
         n = rv / (2 * r_b) * (1 + 4 * r_b / r_a) ** (1 / 2)
+
+        # Grundmann (2016), Eq. 4.28: R_b* = R_b eta coth(eta).
         effective_bhr_ubwt = r_b * n * coth(n)
 
         return effective_bhr_ubwt
@@ -248,6 +258,11 @@ class Coaxial:
         """
         Calculates the convection resistance at the inner surface of the outer pipe
         and the conduction resistance of the outer pipe.
+
+        This is ``R_c,ao + R_p,a``, the fluid-to-outer-pipe-wall portion of
+        Grundmann (2016), Equation 4.5. It excludes grout resistance and the
+        inner-annulus convection resistance assigned to ``R_a`` by Equation 4.4.
+
         :param m_dot: mass flow rate, kg/s
         :param temp: temperature, C
         :return: outer annular convection resistance and outer pipe conduction resistance, K/(W/m)
@@ -255,4 +270,6 @@ class Coaxial:
 
         _, r_cond_outer_pipe = self.calc_cond_resist()
         r_conv_inside_outer_pipe = self.calc_conv_resist_annulus(m_dot, temp)[1]
+
+        # Grundmann (2016), Eq. 4.5, excluding the grout term R_g.
         return r_cond_outer_pipe + r_conv_inside_outer_pipe

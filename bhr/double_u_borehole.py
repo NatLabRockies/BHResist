@@ -249,19 +249,23 @@ class DoubleUTube(UTube):
         Double U-Pipe Borehole Heat Exchangers.” Science and Technology for
         the Built Environment 25 (8): 980-92. doi:10.1080/23744731.2019.1620565.
 
-        Eq: 44
+        Equation 44. The paper defines ``V_f`` as flow in one of the two
+        parallel U-tubes; ``m_dot`` is total borehole flow.
 
-        :param m_dot: mass flow rate, kg/s
+        :param m_dot: total borehole mass flow rate, kg/s
         :param temp: temperature, Celsius
 
         :return: effective_bhr_uhf: effective borehole resistance under uniform heat flux boundary conditions [K/(W/m)]
         """
 
+        # Claesson and Javed (2019), Eqs. 42-44: the symmetric double U-tube is
+        # two identical U-tubes in parallel; V_f is the flow in one U-tube.
         m_dot_per_u_tube = m_dot / 2
         internal_resist = self.calc_internal_resist(m_dot_per_u_tube, temp)
         borehole_resist_local = self.calc_bh_resist_local(m_dot_per_u_tube, temp)
         rv = self.bh_length / (self.fluid.cp(temp) * m_dot_per_u_tube)  # (K/(w/m)) thermal resistance factor
 
+        # Claesson and Javed (2019), Eq. 44: R_b* = R_b + R_v^2 / (6 R_a).
         effective_bhr_uhf = borehole_resist_local + rv**2 / (6 * internal_resist)
 
         return effective_bhr_uhf
@@ -275,21 +279,27 @@ class DoubleUTube(UTube):
         Double U-Pipe Borehole Heat Exchangers.” Science and Technology for
         the Built Environment 25 (8): 980-92. doi:10.1080/23744731.2019.1620565.
 
-        Eq: 46
+        Equation 46. The paper defines ``V_f`` as flow in one of the two
+        parallel U-tubes; ``m_dot`` is total borehole flow.
 
-        :param m_dot: mass flow rate, kg/s
+        :param m_dot: total borehole mass flow rate, kg/s
         :param temp: temperature, Celsius
 
         :return: effective_bhr_ubwt: effective borehole resistance for uniform borehole wall temperature
                                     boundary condition [K/(W/m)]
         """
 
+        # Claesson and Javed (2019), Eqs. 42 and 46: the symmetric double U-tube
+        # is two identical U-tubes in parallel; V_f is the flow in one U-tube.
         m_dot_per_u_tube = m_dot / 2
         internal_resist = self.calc_internal_resist(m_dot_per_u_tube, temp)
         borehole_resist_local = self.calc_bh_resist_local(m_dot_per_u_tube, temp)
 
         rv = self.bh_length / (self.fluid.cp(temp) * m_dot_per_u_tube)  # (K/(w/m)) thermal resistance factor
+        # Claesson and Javed (2019), Eq. 46: eta = R_v / sqrt(2 R_b R_a).
         n = rv / (2 * borehole_resist_local * internal_resist) ** 0.5
+
+        # Claesson and Javed (2019), Eq. 46: R_b* = R_b eta coth(eta).
         effective_bhr_ubwt = borehole_resist_local * n * coth(n)
 
         return effective_bhr_ubwt
