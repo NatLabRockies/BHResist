@@ -128,23 +128,17 @@ class DoubleUTube(UTube):
 
     def update_b1(self, m_dot_per_u_tube: float, temperature: float) -> float:
         """
-        Updates b1 coefficient.
+        Updates the dimensionless first-order multipole coefficient ``b1``.
 
-        Javed, S. & Spitler, J.D. Calculation of Borehole Thermal Resistance. In 'Advances in
-        Ground-Source Heat Pump Systems,' pp. 84. Rees, S.J. ed. Cambridge, MA. Elsevier Ltd. 2016.
-
-        Eq: 3-47
-
-        Javed, S. & Spitler, J.D. 2017. 'Accuracy of Borehole Thermal Resistance Calculation Methods
-        for Grouted Single U-tube Ground Heat Exchangers.' Applied Energy.187:790-806.
-
-        Eq: 14
+        Claesson and Javed (2019), Equation 15, defines
+        ``b1 = (1 - beta) / (1 + beta)``. The resistance parameter
+        ``beta = 2 pi k_g R_p`` follows Javed and Spitler (2016), Equation
+        3.47, and Javed and Spitler (2017), Equation 14.
 
         :param m_dot_per_u_tube: mass flow rate in each u-tube, kg/s
         :param temperature: temperature, Celsius
 
-        :return: b1: a ratio of (1-beta)/(1+beta), dependent on pipe resistance
-                    & grout conductivity, dimensionless
+        :return: coefficient ``b1``, dimensionless
         """
 
         pipe_resist = self.calc_fluid_pipe_resist(m_dot_per_u_tube, temperature)
@@ -200,7 +194,8 @@ class DoubleUTube(UTube):
         :param m_dot_per_u_tube: mass flow rate in each u-tube, kg/s
         :param temperature: temperature, Celsius
 
-        :return: internal_resist: local internal resistance, K/(W/m)
+        :return: diagonal ``R_a^d`` or adjacent ``R_a^a`` internal
+                 resistance selected by the inlet arrangement, K/(W/m)
         """
 
         b1 = self.update_b1(m_dot_per_u_tube, temperature)
@@ -209,10 +204,10 @@ class DoubleUTube(UTube):
             raise ValueError("Pipe resistance has not been calculated yet.")
 
         if self.pipe_inlet_arrangement == DoubleUPipeInletArrangement.DIAGONAL:
-            # 0th order
+            # Claesson and Javed (2019), Eq. 18: zeroth-order R_a^d.
             ra0 = 2 * self.pipe_resist + 2 / self.two_pi_kg * (ln(self.c_1) + self.sigma * self.ln_c2_c3)
 
-            # 1st order
+            # Claesson and Javed (2019), Eq. 19: first-order R_a^d.
             internal_resist = ra0 - 2 / self.two_pi_kg * (b1 * self.p_pc * (1 + 8 * self.sigma * self.c_4) ** 2) / (
                 1 - b1 * self.p_pc * (3 - 32 * self.sigma * self.c_5)
             )
@@ -220,10 +215,10 @@ class DoubleUTube(UTube):
             return internal_resist
 
         elif self.pipe_inlet_arrangement == DoubleUPipeInletArrangement.ADJACENT:
-            # 0th order
+            # Claesson and Javed (2019), Eq. 22: zeroth-order R_a^a.
             ra0 = 2 * self.pipe_resist + 2 / self.two_pi_kg * (ln(2 * self.c_1) + self.sigma * self.ln_d2_d3)
 
-            # 1st order
+            # Claesson and Javed (2019), Eqs. 23-24: first-order R_a^a.
             matrix_element_11 = 1 + 16 * b1 * self.sigma * self.p_pc * self.d_4
             matrix_element_22 = -1 - 16 * b1 * self.sigma * self.p_pc * self.d_5
             matrix_element_21 = b1 * self.p_pc
@@ -263,10 +258,10 @@ class DoubleUTube(UTube):
         m_dot_per_u_tube = m_dot / 2
         internal_resist = self.calc_internal_resist(m_dot_per_u_tube, temp)
         borehole_resist_local = self.calc_bh_resist_local(m_dot_per_u_tube, temp)
-        rv = self.bh_length / (self.fluid.cp(temp) * m_dot_per_u_tube)  # (K/(w/m)) thermal resistance factor
+        r_v = self.bh_length / (self.fluid.cp(temp) * m_dot_per_u_tube)  # K/(W/m)
 
-        # Claesson and Javed (2019), Eq. 44: R_b* = R_b + R_v^2 / (6 R_a).
-        effective_bhr_uhf = borehole_resist_local + rv**2 / (6 * internal_resist)
+        # Claesson and Javed (2019), Eq. 44: R_b* = R_b + R_v^2 / (6 R_a^{d,a}).
+        effective_bhr_uhf = borehole_resist_local + r_v**2 / (6 * internal_resist)
 
         return effective_bhr_uhf
 
@@ -295,11 +290,11 @@ class DoubleUTube(UTube):
         internal_resist = self.calc_internal_resist(m_dot_per_u_tube, temp)
         borehole_resist_local = self.calc_bh_resist_local(m_dot_per_u_tube, temp)
 
-        rv = self.bh_length / (self.fluid.cp(temp) * m_dot_per_u_tube)  # (K/(w/m)) thermal resistance factor
-        # Claesson and Javed (2019), Eq. 46: eta = R_v / sqrt(2 R_b R_a).
-        n = rv / (2 * borehole_resist_local * internal_resist) ** 0.5
+        r_v = self.bh_length / (self.fluid.cp(temp) * m_dot_per_u_tube)  # K/(W/m)
+        # Claesson and Javed (2019), Eq. 46: eta = R_v / sqrt(2 R_b R_a^{d,a}).
+        eta = r_v / (2 * borehole_resist_local * internal_resist) ** 0.5
 
         # Claesson and Javed (2019), Eq. 46: R_b* = R_b eta coth(eta).
-        effective_bhr_ubwt = borehole_resist_local * n * coth(n)
+        effective_bhr_ubwt = borehole_resist_local * eta * coth(eta)
 
         return effective_bhr_ubwt

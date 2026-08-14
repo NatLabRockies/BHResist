@@ -172,9 +172,9 @@ class Coaxial:
 
         :param m_dot: mass flow rate, kg/s
         :param temp: temperature, C
-        :return: local_bh_resist: total local borehole resistance K /(W/m)
-        :return: r_internal_resist: local internal borehole resistance K /(W/m)
-        :return: r_borehole_resist: local borehole resistance K /(W/m)
+        :return: total_series_resist: sum of ``R_a`` and ``R_b``, K/(W/m)
+        :return: r_internal_resist: local internal borehole resistance ``R_a``, K/(W/m)
+        :return: r_borehole_resist: local borehole resistance ``R_b``, K/(W/m)
 
         """
         # resistances progressing from inside to outside
@@ -191,9 +191,9 @@ class Coaxial:
 
         # Grundmann (2016), Eq. 4.5: R_b = R_c,ao + R_p,a + R_g.
         r_borehole_resist = sum([r_conv_inside_outer_pipe, r_cond_outer_pipe, r_cond_grout])
-        local_bh_resist = r_internal_resist + r_borehole_resist
+        total_series_resist = r_internal_resist + r_borehole_resist
 
-        return [local_bh_resist, r_internal_resist, r_borehole_resist]
+        return [total_series_resist, r_internal_resist, r_borehole_resist]
 
     def calc_effective_bh_resistance_uhf(self, m_dot, temp):
         """
@@ -209,9 +209,9 @@ class Coaxial:
         """
 
         _, r_a, r_b = self.calc_local_bh_resistance(m_dot, temp)
-        rv = self.length / (m_dot * self.fluid.cp(temp))  # (K/(w/m)) thermal resistance factor
+        r_v = self.length / (m_dot * self.fluid.cp(temp))  # K/(W/m)
         # Grundmann (2016), Eq. 4.33: R_b* = R_b + R_v^2 / (3 R_a).
-        effective_bhr_uhf = r_b + 1 / (3 * r_a) * rv**2
+        effective_bhr_uhf = r_b + 1 / (3 * r_a) * r_v**2
 
         return effective_bhr_uhf
 
@@ -229,12 +229,12 @@ class Coaxial:
         """
 
         _, r_a, r_b = self.calc_local_bh_resistance(m_dot, temp)
-        rv = self.length / (m_dot * self.fluid.cp(temp))  # (K/(w/m)) thermal resistance factor
+        r_v = self.length / (m_dot * self.fluid.cp(temp))  # K/(W/m)
         # Grundmann (2016), Eq. 4.29: eta accounts for axial fluid-temperature variation.
-        n = rv / (2 * r_b) * (1 + 4 * r_b / r_a) ** (1 / 2)
+        eta = r_v / (2 * r_b) * (1 + 4 * r_b / r_a) ** (1 / 2)
 
         # Grundmann (2016), Eq. 4.28: R_b* = R_b eta coth(eta).
-        effective_bhr_ubwt = r_b * n * coth(n)
+        effective_bhr_ubwt = r_b * eta * coth(eta)
 
         return effective_bhr_ubwt
 

@@ -225,9 +225,9 @@ class SingleUBorehole(UTube):
         r_v = self.bh_length / (m_dot * self.fluid.cp(temp))
 
         # Javed and Spitler (2016), Eqs. 3.12-3.14 and 3.69: eta = R_v / sqrt(R_b R_a).
-        n = r_v / (r_b * r_a) ** 0.5
+        eta = r_v / (r_b * r_a) ** 0.5
 
         # Javed and Spitler (2016), Eq. 3.68: R_b* = R_b eta coth(eta).
-        resist_bh_effective_ubt = r_b * n * coth(n)
+        resist_bh_effective_ubwt = r_b * eta * coth(eta)
 
-        return resist_bh_effective_ubt
+        return resist_bh_effective_ubwt
