@@ -44,6 +44,12 @@ class TestSingleUBorehole(TestCase):
         self.assertAlmostEqual(bh.calc_total_internal_bh_resistance(flow_rate, temperature), 0.17456, delta=tolerance)
         self.assertAlmostEqual(bh.calc_grout_resistance(flow_rate, temperature), 0.03373, delta=tolerance)
 
+    def test_grout_resistance_requires_calculated_pipe_resistance(self):
+        bh = SingleUBorehole(**self.inputs)
+
+        with self.assertRaisesRegex(ValueError, "Pipe resistance has not been calculated"):
+            bh.calc_grout_resistance(m_dot=0.5, temp=20)
+
     def test_calc_effective_bh_resistance_uhf(self):
         bh = SingleUBorehole(**self.inputs)
         tolerance = 1e-3

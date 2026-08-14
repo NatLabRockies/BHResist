@@ -6,6 +6,18 @@ from bhr.borehole import Borehole
 
 
 class TestBorehole(unittest.TestCase):
+    @staticmethod
+    def _minimal_dict_inputs():
+        return {
+            "fluid_type": "WATER",
+            "boundary_condition": "uniform_heat_flux",
+            "borehole_type": "single_u_tube",
+            "borehole_diameter": 0.14,
+            "length": 100,
+            "grout_conductivity": 1.2,
+            "soil_conductivity": 2.5,
+        }
+
     def test_adopts_user_defined_fluid(self):
         custom_fluid = get_fluid(
             "user_defined",
@@ -39,6 +51,67 @@ class TestBorehole(unittest.TestCase):
     def test_set_fluid_requires_initialized_borehole(self):
         with self.assertRaisesRegex(RuntimeError, "Initialize the borehole"):
             Borehole().set_fluid(get_fluid("water"))
+
+    def test_init_from_dict_rejects_invalid_enums(self):
+        inputs = self._minimal_dict_inputs()
+        inputs["borehole_type"] = "unsupported"
+        with self.assertRaisesRegex(LookupError, 'borehole_type "UNSUPPORTED" not supported'):
+            Borehole().init_from_dict(inputs)
+
+        inputs = self._minimal_dict_inputs()
+        inputs["boundary_condition"] = "unsupported"
+        with self.assertRaisesRegex(LookupError, 'boundary_condition "UNSUPPORTED" not supported'):
+            Borehole().init_from_dict(inputs)
+
+    def test_init_from_dict_rejects_unimplemented_internal_type(self):
+        bh = Borehole()
+
+        class UnsupportedType:
+            name = "UNSUPPORTED"
+
+        class MutatingInputs(dict):
+            def __getitem__(self, key):
+                if key == "borehole_diameter":
+                    bh._bh_type = UnsupportedType()
+                return super().__getitem__(key)
+
+        inputs = MutatingInputs(self._minimal_dict_inputs())
+        with self.assertRaisesRegex(NotImplementedError, 'bh_type "UNSUPPORTED" not implemented'):
+            bh.init_from_dict(inputs)
+
+    def test_calculation_methods_require_initialized_borehole(self):
+        bh = Borehole()
+
+        with self.assertRaisesRegex(TypeError, "Borehole not initialized"):
+            bh.calc_bh_resist(mass_flow_rate=0.5, temperature=20)
+        with self.assertRaisesRegex(NotImplementedError, "None not implemented"):
+            bh.calc_pipe_cond_resist()
+        with self.assertRaisesRegex(NotImplementedError, "None not implemented"):
+            bh.calc_fluid_resist(mass_flow_rate=0.5, temperature=20)
+        with self.assertRaisesRegex(TypeError, "Borehole not initialized"):
+            bh.calc_fluid_pipe_resist(mass_flow_rate=0.5, temperature=20)
+
+    def test_calculation_methods_reject_invalid_runtime_state(self):
+        bh = Borehole()
+        bh.init_single_u_borehole(
+            borehole_diameter=0.14,
+            pipe_outer_diameter=0.042,
+            pipe_dimension_ratio=11,
+            length=100,
+            shank_space=0.01,
+            pipe_conductivity=0.4,
+            grout_conductivity=1.2,
+            soil_conductivity=2.5,
+            fluid_type="WATER",
+        )
+
+        bh._boundary_condition = None
+        with self.assertRaisesRegex(NotImplementedError, "Boundary Condition"):
+            bh.calc_bh_resist(mass_flow_rate=0.5, temperature=20)
+
+        bh._bh_type = None
+        with self.assertRaisesRegex(NotImplementedError, "None not implemented"):
+            bh.calc_fluid_pipe_resist(mass_flow_rate=0.5, temperature=20)
 
     def test_init_single_u_uhf(self):
         bh = Borehole()

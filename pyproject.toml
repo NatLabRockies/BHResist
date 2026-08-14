@@ -47,7 +47,7 @@ docs = [
 ]
 
 [tool.pytest.ini_options]
-addopts = "--cov=bhr"
+addopts = "--cov=bhr --cov-fail-under=100"
 
 [tool.uv]
 default-groups = ["dev", "docs"]

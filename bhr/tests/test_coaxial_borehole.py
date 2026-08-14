@@ -91,6 +91,25 @@ class TestCoaxialBorehole(TestCase):
         # turbulent flow
         self.assertAlmostEqual(coax.calc_conv_resist_annulus(m_dot=0.5, temp=20)[1], 0.003314, delta=1e-3)
 
+        # fully turbulent flow above the interpolation range
+        fully_turbulent = coax.calc_conv_resist_annulus(m_dot=1.0, temp=20)
+        transitional = coax.calc_conv_resist_annulus(m_dot=0.5, temp=20)
+        self.assertLess(fully_turbulent[0], transitional[0])
+        self.assertLess(fully_turbulent[1], transitional[1])
+
+    def test_calc_conv_resist_returns_inner_pipe_and_annular_values(self):
+        coax = Coaxial(**self.inputs)
+        mass_flow_rate = 0.5
+        temperature = 20
+
+        expected_inner = coax.inner_pipe.calc_conv_resist(mass_flow_rate, temperature)
+        expected_annular = sum(coax.calc_conv_resist_annulus(mass_flow_rate, temperature))
+
+        self.assertEqual(
+            coax.calc_conv_resist(mass_flow_rate, temperature),
+            (expected_inner, expected_annular),
+        )
+
     def test_calc_local_bh_resistance(self):
         coax = Coaxial(**self.inputs)
 
