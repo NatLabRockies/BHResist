@@ -1,6 +1,7 @@
 from scp import get_fluid
 from scp.base_fluid import BaseFluid
 
+# Deprecated: legacy fluid keys will be removed in the v1.0.0 release.
 _LEGACY_FLUID_KEYS = {
     "ETHYLALCOHOL": "ethyl_alcohol",
     "ETHYLENEGLYCOL": "ethylene_glycol",

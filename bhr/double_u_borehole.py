@@ -139,7 +139,7 @@ class DoubleUTube(UTube):
         ``beta = 2 pi k_g R_p`` follows Javed and Spitler (2016), Equation
         3.47, and Javed and Spitler (2017), Equation 14.
 
-        :param m_dot_per_u_tube: mass flow rate in each u-tube, kg/s
+        :param m_dot_per_u_tube: mass flow rate in each U-tube, kg/s
         :param temperature: temperature, Celsius
 
         :return: coefficient ``b1``, dimensionless
@@ -163,7 +163,7 @@ class DoubleUTube(UTube):
 
         Eq: 13 & 14
 
-        :param m_dot_per_u_tube: mass flow rate in each u-tube, kg/s
+        :param m_dot_per_u_tube: mass flow rate in each U-tube, kg/s
         :param temperature: temperature, Celsius
 
         :return: borehole_resist_local: local borehole resistance, K/(W/m)
@@ -195,7 +195,7 @@ class DoubleUTube(UTube):
 
         Eq: 18, 19, 22, 23
 
-        :param m_dot_per_u_tube: mass flow rate in each u-tube, kg/s
+        :param m_dot_per_u_tube: mass flow rate in each U-tube, kg/s
         :param temperature: temperature, Celsius
 
         :return: diagonal ``R_a^d`` or adjacent ``R_a^a`` internal
