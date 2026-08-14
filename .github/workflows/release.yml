@@ -1,0 +1,35 @@
+name: PyPIRelease
+
+on:
+  release:
+    types: [published]
+
+jobs:
+  release:
+    if: github.event.release.prerelease == false && github.event.release.draft == false
+    runs-on: ubuntu-latest
+    environment:
+      name: pypi
+      url: https://pypi.org/p/BHResist
+    permissions:
+      contents: read
+      id-token: write
+
+    steps:
+      - uses: actions/checkout@v6
+        with:
+          ref: ${{ github.event.release.tag_name }}
+
+      - name: Install uv
+        uses: astral-sh/setup-uv@v7
+        with:
+          version: "0.9.22"
+
+      - name: Install the project
+        run: uv sync --locked
+
+      - name: Build
+        run: uv build --no-sources
+
+      - name: Deploy on PyPI
+        uses: pypa/gh-action-pypi-publish@release/v1
